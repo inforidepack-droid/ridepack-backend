@@ -6,6 +6,7 @@ import { connectRedis, disconnectRedis } from "@/config/redis";
 import { initializeSocket } from "@/config/socket";
 import { logger } from "@/config/logger";
 import "@/modules/auth/models/User.model";
+import "@/modules/auth/models/Otp.model";
 
 const PORT = process.env.PORT || 3000;
 

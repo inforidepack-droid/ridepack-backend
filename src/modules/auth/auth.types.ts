@@ -1,27 +1,33 @@
-export interface RegisterDto {
-  email: string;
-  password: string;
-  name: string;
+export interface RefreshTokenDto {
+  refreshToken: string;
 }
 
-export interface LoginDto {
-  email: string;
-  password: string;
+export interface SendOtpDto {
+  countryCode: string;
+  phoneNumber: string;
 }
 
-export interface AuthResponse {
+export interface VerifyOtpDto {
+  countryCode: string;
+  phoneNumber: string;
+  otp: string;
+}
+
+export interface OtpResponse {
+  success: boolean;
+  message: string;
+}
+
+export interface VerifyOtpResponse {
   success: boolean;
   data: {
     user: {
       id: string;
-      email: string;
-      name: string;
+      phoneNumber: string;
+      countryCode: string;
+      isPhoneVerified: boolean;
     };
-    token: string;
+    accessToken: string;
     refreshToken: string;
   };
-}
-
-export interface RefreshTokenDto {
-  refreshToken: string;
 }
