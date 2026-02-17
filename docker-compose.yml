@@ -8,17 +8,8 @@ services:
     container_name: ridepack-backend
     ports:
       - "3000:3000"
-    environment:
-      - NODE_ENV=production
-      - PORT=3000
-      - MONGODB_URI=mongodb://mongo:27017/ridepack
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - JWT_SECRET=${JWT_SECRET:-your-super-secret-jwt-key-change-this-in-production}
-      - JWT_EXPIRES_IN=7d
-      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET:-your-super-secret-refresh-key-change-this-in-production}
-      - JWT_REFRESH_EXPIRES_IN=30d
-      - CORS_ORIGIN=${CORS_ORIGIN:-http://localhost:3000}
+    env_file:
+      - .env
     depends_on:
       - mongo
       - redis
