@@ -25,10 +25,13 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install production dependencies only
-RUN npm ci --only=production
+RUN npm i
 
 # Copy built files from builder
 COPY --from=builder /app/dist ./dist
+
+# Copy .env file
+COPY .env .env
 
 # Create logs directory
 RUN mkdir -p logs
