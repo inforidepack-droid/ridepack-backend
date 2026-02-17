@@ -8,6 +8,8 @@ export interface IUser extends Document {
   countryCode?: string;
   isPhoneVerified: boolean;
   role: string;
+  googleId?: string;
+  avatar?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -48,8 +50,16 @@ const userSchema = new Schema<IUser>(
     },
     role: {
       type: String,
-      enum: ["user", "admin"],
-      default: "user",
+      enum: ["USER", "ADMIN"],
+      default: "USER",
+    },
+    avatar: {
+      type: String 
+    },
+    googleId:{
+      type: String,
+      unique:true,
+      sparse:true
     },
   },
   {

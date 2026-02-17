@@ -8,7 +8,7 @@ export interface AuthRequest extends Request {
 
 export const authenticate = (
   req: AuthRequest,
-  res: Response,
+  _res: Response,
   next: NextFunction
 ): void => {
   try {
@@ -19,7 +19,7 @@ export const authenticate = (
     }
 
     const token = authHeader.split(" ")[1];
-    const decoded = verifyToken(token);
+    const decoded = verifyToken(token) as TokenPayload;
 
     req.user = decoded;
     next();

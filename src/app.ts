@@ -3,7 +3,9 @@ import cors from "cors";
 import helmet from "helmet";
 import { apiLimiter } from "@/middlewares/rateLimiter";
 import routes from "@/routes/routes";
+import authRoutes from "./routes/authRoutes"
 import { errorHandler } from "@/middlewares/errorHandler";
+import passport from "passport";
 
 export const createApp = (): Express => {
   const app = express();
@@ -19,6 +21,7 @@ export const createApp = (): Express => {
 
   // Body parser
   app.use(express.json());
+  app.use(passport.initialize());
   app.use(express.urlencoded({ extended: true }));
 
   // Rate limiting
