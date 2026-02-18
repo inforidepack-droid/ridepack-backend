@@ -29,7 +29,7 @@ export const createApp = (): Express => {
 
   // Health check endpoint
   app.get("/health", (_req, res) => {
-    res.status(200).json({ status: "okkk" });
+    res.status(200).json({ status: "ok" });
   });
 
   // Error handler (must be last)
