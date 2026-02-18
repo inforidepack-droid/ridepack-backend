@@ -25,6 +25,6 @@ jobs:
           ssh -i ~/.ssh/deploy_key ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "
             cd /home/ubuntu/ridepack-backend &&
             git pull origin main &&
-            docker-compose down &&
-            docker-compose up -d --build
+            docker compose down &&
+            docker compose up -d --build
           "
