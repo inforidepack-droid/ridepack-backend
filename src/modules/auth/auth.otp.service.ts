@@ -109,6 +109,7 @@ export const verifyOtp = async (verifyOtpDto: VerifyOtpDto): Promise<VerifyOtpRe
     userId: user._id.toString(),
     phoneNumber: user.phoneNumber,
     countryCode: user.countryCode,
+    role:user.role,
   };
 
   const accessToken = generateToken(tokenPayload);

@@ -1,4 +1,5 @@
-import "dotenv/config";
+import "dotenv/config"
+import "@/config/passport";
 import { createServer } from "http";
 import { createApp } from "@/app";
 import { connectDB, disconnectDB } from "@/config/db";

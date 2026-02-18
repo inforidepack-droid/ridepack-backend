@@ -2,8 +2,7 @@ import express, { type Express } from "express";
 import cors from "cors";
 import helmet from "helmet";
 import { apiLimiter } from "@/middlewares/rateLimiter";
-import routes from "@/routes/routes";
-import authRoutes from "./routes/authRoutes"
+import routes from "./routes/routes";
 import { errorHandler } from "@/middlewares/errorHandler";
 import passport from "passport";
 

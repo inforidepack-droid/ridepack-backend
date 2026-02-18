@@ -7,8 +7,27 @@ import { authenticate } from "@/middlewares/auth";
 import { authLimiter } from "@/middlewares/rateLimiter";
 import { validate } from "@/middlewares/validation";
 import { validateZod } from "@/middlewares/zodValidation";
+import { googleCallback } from "@/modules/auth/auth.controller";
+import passport from "passport";
 
 const router = Router();
+
+router.get('/google',passport.authenticate("google",{
+    scope:["profile","email"],
+    session:false
+})
+);
+
+router.get('/google/callback',passport.authenticate("google",{
+    session:false,
+    failureRedirect:"/login"
+}),
+googleCallback
+);  
+
+router.get("/debug", (req, res) => {
+  res.send("Auth router working");
+});
 
 router.post("/refresh-token", refreshTokenValidation(), validate, refreshTokenController);
 router.post("/logout", authenticate, logoutController);

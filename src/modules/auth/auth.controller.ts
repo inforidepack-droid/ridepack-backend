@@ -7,20 +7,16 @@ import { AuthRequest } from "@/middlewares/auth";
 import { redisClient } from "@/config/redis";
 import { IUser } from "./models/User.model";
 import { logger } from "@/config/logger";
+import { TokenPayload } from "@/libs/jwt";
 import { generateRefreshToken, generateToken } from "@/libs/jwt";
 
 export const googleCallback = asyncHandler(
   async (req: Request, res: Response): Promise<void> => {
-    if (!req.user) {
+    const user = req.user as unknown as IUser;
+
+    if (!user || !user._id) {
       throw createError("Authentication failed", 401);
     }
-
-    // Type guard
-    if (!("_id" in req.user)) {
-      throw createError("Invalid user object", 400);
-    }
-
-    const user = req.user as IUser;
 
     const payload = {
       userId: user._id.toString(),
@@ -33,19 +29,13 @@ export const googleCallback = asyncHandler(
 
     await redisClient.setEx(
       `refresh_token:${user._id}`,
-      30 * 24 * 60 * 60,
+      7 * 24 * 60 * 60,
       refreshToken
     );
 
-    logger.info(`Google login success: ${user.email}`);
-
     res.status(200).json({
       success: true,
-      message: "Google login successful",
-      data: {
-        token,
-        refreshToken,
-      },
+      data: { token, refreshToken },
     });
   }
 );
@@ -60,15 +50,14 @@ export const refreshTokenController = asyncHandler(async (req: Request, res: Res
 });
 
 export const logoutController = asyncHandler(
-  async (req, res): Promise<void> => {
-    
-  const authReq = req as AuthRequest;
+  async (req: Request, res: Response): Promise<void> => {
+    const user = req.user as TokenPayload | undefined;
 
-  if (!authReq.user) {
-  throw createError("Unauthorized", 401);
-  }
+    if (!user || !user.userId) {
+      throw createError("Unauthorized", 401);
+    }
 
-  await logout(authReq.user.userId);
+    await logout(user.userId);
 
     res.status(200).json({
       success: true,
