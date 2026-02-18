@@ -2,7 +2,7 @@ import User from "@/modules/auth/models/User.model";
 import passport from "passport";
 
 import { Strategy as GoogleStrategy, Profile } from "passport-google-oauth20";
-import {logger} from "./logger"
+import { logger } from "./logger";
 
 passport.use(
   new GoogleStrategy(
@@ -11,11 +11,11 @@ passport.use(
       clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
       callbackURL: "/api/auth/google/callback",
     },
-    async (accessToken:string, refreshToken:string, profile:Profile, done) => {
+    async (accessToken: string, refreshToken: string, profile: Profile, done) => {
       try {
         const email = profile.emails?.[0].value;
 
-          if (!email) {
+        if (!email) {
           return done(new Error("Google account has no email"), false);
         }
 
@@ -34,7 +34,7 @@ passport.use(
 
         return done(null, user);
       } catch (error) {
-        logger.error(`Google auth eror ${error}`)
+        logger.error(`Google auth eror ${error}`);
         return done(error as Error, false);
       }
     }

@@ -54,12 +54,12 @@ const userSchema = new Schema<IUser>(
       default: "USER",
     },
     avatar: {
-      type: String 
-    },
-    googleId:{
       type: String,
-      unique:true,
-      sparse:true
+    },
+    googleId: {
+      type: String,
+      unique: true,
+      sparse: true,
     },
   },
   {

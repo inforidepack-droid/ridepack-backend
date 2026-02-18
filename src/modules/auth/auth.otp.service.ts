@@ -1,6 +1,11 @@
 import bcrypt from "bcryptjs";
 import { Model } from "mongoose";
-import { SendOtpDto, VerifyOtpDto, OtpResponse, VerifyOtpResponse } from "@/modules/auth/auth.types";
+import {
+  SendOtpDto,
+  VerifyOtpDto,
+  OtpResponse,
+  VerifyOtpResponse,
+} from "@/modules/auth/auth.types";
 import { generateToken, generateRefreshToken, TokenPayload } from "@/libs/jwt";
 import { createError } from "@/middlewares/errorHandler";
 import { redisClient } from "@/config/redis";
@@ -18,7 +23,11 @@ const generateOtp = (): string => {
   return Math.floor(1000 + Math.random() * 9000).toString();
 };
 
-const mockSendSms = async (countryCode: string, phoneNumber: string, otp: string): Promise<void> => {
+const mockSendSms = async (
+  countryCode: string,
+  phoneNumber: string,
+  otp: string
+): Promise<void> => {
   logger.info(`[MOCK SMS] Sending OTP to ${countryCode}${phoneNumber}: ${otp}`);
   await new Promise((resolve) => setTimeout(resolve, 100));
 };
@@ -109,7 +118,7 @@ export const verifyOtp = async (verifyOtpDto: VerifyOtpDto): Promise<VerifyOtpRe
     userId: user._id.toString(),
     phoneNumber: user.phoneNumber,
     countryCode: user.countryCode,
-    role:user.role,
+    role: user.role,
   };
 
   const accessToken = generateToken(tokenPayload);

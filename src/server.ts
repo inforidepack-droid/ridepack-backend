@@ -1,4 +1,4 @@
-import "dotenv/config"
+import "dotenv/config";
 import "@/config/passport";
 import { createServer } from "http";
 import { createApp } from "@/app";
@@ -28,7 +28,9 @@ const startServer = async (): Promise<void> => {
 
     // Start server
     httpServer.listen(PORT, () => {
-      logger.info(`Server running on port ${PORT} in ${process.env.NODE_ENV || "development"} mode`);
+      logger.info(
+        `Server running on port ${PORT} in ${process.env.NODE_ENV || "development"} mode`
+      );
     });
 
     // Graceful shutdown

@@ -3,66 +3,57 @@ import { asyncHandler } from "@/middlewares/asyncHandler";
 import { createError } from "@/middlewares/errorHandler";
 import { refreshToken, logout } from "@/modules/auth/auth.service";
 import { RefreshTokenDto } from "@/modules/auth/auth.types";
-import { AuthRequest } from "@/middlewares/auth";
 import { redisClient } from "@/config/redis";
 import { IUser } from "./models/User.model";
-import { logger } from "@/config/logger";
 import { TokenPayload } from "@/libs/jwt";
 import { generateRefreshToken, generateToken } from "@/libs/jwt";
 
-export const googleCallback = asyncHandler(
-  async (req: Request, res: Response): Promise<void> => {
-    const user = req.user as unknown as IUser;
+export const googleCallback = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  const user = req.user as unknown as IUser;
 
-    if (!user || !user._id) {
-      throw createError("Authentication failed", 401);
-    }
-
-    const payload = {
-      userId: user._id.toString(),
-      email: user.email,
-      role: user.role,
-    };
-
-    const token = generateToken(payload);
-    const refreshToken = generateRefreshToken(payload);
-
-    await redisClient.setEx(
-      `refresh_token:${user._id}`,
-      7 * 24 * 60 * 60,
-      refreshToken
-    );
-
-    res.status(200).json({
-      success: true,
-      data: { token, refreshToken },
-    });
+  if (!user || !user._id) {
+    throw createError("Authentication failed", 401);
   }
-);
 
-export const refreshTokenController = asyncHandler(async (req: Request, res: Response): Promise<void> => {
-  const refreshTokenDto: RefreshTokenDto = req.body;
-  const result = await refreshToken(refreshTokenDto);
+  const payload = {
+    userId: user._id.toString(),
+    email: user.email,
+    role: user.role,
+  };
+
+  const token = generateToken(payload);
+  const refreshToken = generateRefreshToken(payload);
+
+  await redisClient.setEx(`refresh_token:${user._id}`, 7 * 24 * 60 * 60, refreshToken);
+
   res.status(200).json({
     success: true,
-    data: result,
+    data: { token, refreshToken },
   });
 });
 
-export const logoutController = asyncHandler(
+export const refreshTokenController = asyncHandler(
   async (req: Request, res: Response): Promise<void> => {
-    const user = req.user as TokenPayload | undefined;
-
-    if (!user || !user.userId) {
-      throw createError("Unauthorized", 401);
-    }
-
-    await logout(user.userId);
-
+    const refreshTokenDto: RefreshTokenDto = req.body;
+    const result = await refreshToken(refreshTokenDto);
     res.status(200).json({
       success: true,
-      message: "Logged out successfully",
+      data: result,
     });
   }
 );
 
+export const logoutController = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  const user = req.user as TokenPayload | undefined;
+
+  if (!user || !user.userId) {
+    throw createError("Unauthorized", 401);
+  }
+
+  await logout(user.userId);
+
+  res.status(200).json({
+    success: true,
+    message: "Logged out successfully",
+  });
+});

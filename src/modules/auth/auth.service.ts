@@ -1,13 +1,11 @@
-import { Model } from "mongoose";
 import { RefreshTokenDto } from "@/modules/auth/auth.types";
 import { generateToken, generateRefreshToken, verifyRefreshToken, TokenPayload } from "@/libs/jwt";
 import { createError } from "@/middlewares/errorHandler";
 import { redisClient } from "@/config/redis";
-import User, { IUser } from "@/modules/auth/models/User.model";
 
-const UserModel = User as Model<IUser>;
-
-export const refreshToken = async (refreshTokenDto: RefreshTokenDto): Promise<{ token: string; refreshToken: string }> => {
+export const refreshToken = async (
+  refreshTokenDto: RefreshTokenDto
+): Promise<{ token: string; refreshToken: string }> => {
   const { refreshToken } = refreshTokenDto;
 
   // Verify refresh token

@@ -10,7 +10,7 @@ export interface TokenPayload {
   email?: string;
   phoneNumber?: string;
   countryCode?: string;
-  role?:string
+  role?: string;
 }
 
 export const generateToken = (payload: TokenPayload): string => {
