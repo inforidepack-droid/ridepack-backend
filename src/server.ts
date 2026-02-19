@@ -7,6 +7,7 @@ import { initializeSocket } from "@/config/socket";
 import { logger } from "@/config/logger";
 import "@/modules/auth/models/User.model";
 import "@/modules/auth/models/Otp.model";
+import "@/modules/ride/ride.model";
 
 const PORT = process.env.PORT || 3000;
 

@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { verifyToken, TokenPayload } from "@/libs/jwt";
-import { createError } from "@/middlewares/errorHandler";
+import { createError } from "@/utils/appError";
 
 export interface AuthRequest extends Request {
   user?: TokenPayload;
