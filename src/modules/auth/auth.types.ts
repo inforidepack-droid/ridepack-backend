@@ -18,15 +18,23 @@ export interface OtpResponse {
   message: string;
 }
 
+/** User in auth responses – all fields present (empty string when not set) so backend/clients don't crash. */
+export interface AuthUserResponse {
+  id: string;
+  email: string;
+  name: string;
+  phoneNumber: string;
+  countryCode: string;
+  isPhoneVerified: boolean;
+  role: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export interface VerifyOtpResponse {
   success: boolean;
   data: {
-    user: {
-      id: string;
-      phoneNumber: string;
-      countryCode: string;
-      isPhoneVerified: boolean;
-    };
+    user: AuthUserResponse;
     accessToken: string;
     refreshToken: string;
   };

@@ -1,4 +1,5 @@
 import { SendOtpDto, VerifyOtpDto, VerifyOtpResponse } from "@/modules/auth/auth.types";
+import { toAuthUserResponse } from "@/modules/auth/auth.utils";
 import { generateToken, generateRefreshToken, type TokenPayload } from "@/utils/token.util";
 import { createError } from "@/utils/appError";
 import { hashPassword, comparePassword } from "@/utils/password.util";
@@ -84,15 +85,12 @@ export const verifyOtp = async (verifyOtpDto: VerifyOtpDto): Promise<VerifyOtpRe
   const refreshToken = generateRefreshToken(payload);
   await authRepository.setRefreshToken(userId, refreshToken, 7 * 24 * 60 * 60);
 
+  const userData = toAuthUserResponse(user);
+
   return {
     success: true,
     data: {
-      user: {
-        id: userId,
-        phoneNumber: user.phoneNumber ?? "",
-        countryCode: user.countryCode ?? "",
-        isPhoneVerified: user.isPhoneVerified,
-      },
+      user: userData,
       accessToken,
       refreshToken,
     },
