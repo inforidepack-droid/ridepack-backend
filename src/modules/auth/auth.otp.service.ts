@@ -1,3 +1,4 @@
+import { env } from "@/config/env.config";
 import { SendOtpDto, VerifyOtpDto, VerifyOtpResponse } from "@/modules/auth/auth.types";
 import { toAuthUserResponse } from "@/modules/auth/auth.utils";
 import { generateToken, generateRefreshToken, type TokenPayload } from "@/utils/token.util";
@@ -5,9 +6,11 @@ import { createError } from "@/utils/appError";
 import { hashPassword, comparePassword } from "@/utils/password.util";
 import * as authRepository from "@/modules/auth/auth.repository";
 import { sendSms } from "@/services/sms/sms.service";
+import { logger } from "@/config/logger";
 
 const OTP_EXPIRY_MINUTES = 5;
 const MAX_ATTEMPTS = 5;
+const DEV_OTP = "1234";
 const OTP_MESSAGE_TEMPLATE = (code: string) =>
   `Your Ridepack verification code is: ${code}. Valid for ${OTP_EXPIRY_MINUTES} minutes.`;
 
@@ -16,7 +19,8 @@ const generateOtpCode = (): string =>
 
 export const sendOtp = async (sendOtpDto: SendOtpDto): Promise<{ success: boolean; message: string }> => {
   const { countryCode, phoneNumber } = sendOtpDto;
-  const plainOtp = generateOtpCode();
+  const isDev = env.NODE_ENV === "development";
+  const plainOtp = isDev ? DEV_OTP : generateOtpCode();
   const hashedOtp = await hashPassword(plainOtp);
 
   const expiresAt = new Date();
@@ -28,7 +32,12 @@ export const sendOtp = async (sendOtpDto: SendOtpDto): Promise<{ success: boolea
     hashedOtp,
     expiresAt,
   });
-  await sendSms(countryCode, phoneNumber, OTP_MESSAGE_TEMPLATE(plainOtp));
+
+  if (isDev) {
+    logger.info(`[Development] OTP not sent. Use code: ${DEV_OTP}`);
+  } else {
+    await sendSms(countryCode, phoneNumber, OTP_MESSAGE_TEMPLATE(plainOtp));
+  }
 
   return { success: true, message: "OTP sent successfully" };
 };
