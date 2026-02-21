@@ -20,7 +20,7 @@ export const loadExpress = (): Express => {
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
 
-  app.use("/api", apiLimiter);
+  // app.use("/api", apiLimiter);
   app.use("/api", routes);
 
   app.get("/health", (_req, res) => {
