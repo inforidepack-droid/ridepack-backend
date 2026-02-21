@@ -13,7 +13,7 @@ const router = Router();
 router.post("/refresh-token", refreshTokenValidation(), validate, refreshTokenController);
 router.post("/logout", authenticate, logoutController);
 
-router.post("/send-otp", authLimiter, validateZod(sendOtpSchema), sendOtpController);
-router.post("/verify-otp", authLimiter, validateZod(verifyOtpSchema), verifyOtpController);
+router.post("/send-otp", validateZod(sendOtpSchema), sendOtpController);
+router.post("/verify-otp", validateZod(verifyOtpSchema), verifyOtpController);
 
 export default router;
