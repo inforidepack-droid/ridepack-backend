@@ -6,6 +6,7 @@ import { validate } from "@/middlewares/validation";
 
 const router = Router();
 
+router.get("/me", authenticate, getProfileController);
 router.get("/profile", authenticate, getProfileController);
 router.patch("/profile", authenticate, updateProfileValidation(), validate, updateProfileController);
 

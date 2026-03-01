@@ -1,4 +1,5 @@
 import mongoose, { Schema, Document, Model } from "mongoose";
+import { hashPassword } from "@/utils/password.util";
 
 export interface IUser extends Document {
   email?: string;
@@ -7,6 +8,8 @@ export interface IUser extends Document {
   phoneNumber?: string;
   countryCode?: string;
   isPhoneVerified: boolean;
+  isBlocked: boolean;
+  isVerified: boolean;
   role: string;
   createdAt: Date;
   updatedAt: Date;
@@ -46,9 +49,17 @@ const userSchema = new Schema<IUser>(
       type: Boolean,
       default: false,
     },
+    isBlocked: {
+      type: Boolean,
+      default: false,
+    },
+    isVerified: {
+      type: Boolean,
+      default: false,
+    },
     role: {
       type: String,
-      enum: ["user", "admin"],
+      enum: ["user", "admin", "rider", "sender"],
       default: "user",
     },
   },
@@ -57,10 +68,18 @@ const userSchema = new Schema<IUser>(
   }
 );
 
-// Compound index for phone lookup
 userSchema.index({ phoneNumber: 1, countryCode: 1 }, { unique: true, sparse: true });
 
-// Create model
+userSchema.pre("save", function (next) {
+  if (!this.isModified("password") || !this.password) return next();
+  hashPassword(this.password)
+    .then((hashed) => {
+      this.password = hashed;
+      next();
+    })
+    .catch(next);
+});
+
 const User: Model<IUser> = mongoose.model<IUser>("User", userSchema);
 
 export default User;
