@@ -18,7 +18,14 @@ export const env = {
   TWILIO_ACCOUNT_SID: process.env.TWILIO_ACCOUNT_SID ?? "",
   TWILIO_AUTH_TOKEN: process.env.TWILIO_AUTH_TOKEN ?? "",
   TWILIO_PHONE_NUMBER: process.env.TWILIO_PHONE_NUMBER ?? "",
+  AWS_REGION: process.env.AWS_REGION ?? "us-east-1",
+  AWS_ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID ?? "",
+  AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY ?? "",
+  S3_BUCKET: process.env.S3_BUCKET ?? "",
 } as const;
 
 export const isTwilioConfigured = (): boolean =>
   Boolean(env.TWILIO_ACCOUNT_SID && env.TWILIO_AUTH_TOKEN && env.TWILIO_PHONE_NUMBER);
+
+export const isS3Configured = (): boolean =>
+  Boolean(env.AWS_ACCESS_KEY_ID && env.AWS_SECRET_ACCESS_KEY && env.S3_BUCKET);

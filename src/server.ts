@@ -8,6 +8,10 @@ import { logger } from "@/config/logger";
 import "@/modules/auth/models/User.model";
 import "@/modules/auth/models/Otp.model";
 import "@/modules/ride/ride.model";
+import "@/modules/trip/trip.model";
+import "@/modules/booking/booking.model";
+import "@/modules/booking/transaction.model";
+import "@/modules/rider/rider.model";
 
 const PORT = process.env.PORT || 3000;
 
