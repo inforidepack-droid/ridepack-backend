@@ -4,8 +4,13 @@ import * as tripRepository from "@/modules/trip/trip.repository";
 import { TRIP_STATUS } from "@/modules/trip/trip.constants";
 import type { TripLean } from "@/modules/trip/trip.repository";
 
-const HANDLING_FEE_PERCENT = 5;
-const PLATFORM_FEE_PERCENT = 10;
+const HANDLING_FEE_PERCENT = 15;
+
+const computeFeesAndTotal = (basePrice: number) => {
+  const handlingFee = Math.round((basePrice * HANDLING_FEE_PERCENT) / 100 * 100) / 100;
+  const totalPrice = Math.round((basePrice + handlingFee) * 100) / 100;
+  return { handlingFee, totalPrice };
+};
 
 const haversineKm = (
   lat1: number,
@@ -101,21 +106,28 @@ export const searchTrips = async (query: SearchQuery) => {
   });
 
   const list = (trips as (TripLean & { riderId?: { name?: string; phoneNumber?: string; countryCode?: string; _id?: unknown } })[]).map(
-    (t) => ({
-      tripId: (t._id as import("mongoose").Types.ObjectId).toString(),
-      rider: t.riderId
-        ? {
-            name: (t.riderId as { name?: string }).name ?? "",
-            phone: [((t.riderId as { countryCode?: string }).countryCode ?? ""), ((t.riderId as { phoneNumber?: string }).phoneNumber ?? "")].filter(Boolean).join(""),
-          }
-        : { name: "", phone: "" },
-      rating: null as number | null,
-      basePrice: t.price ?? 0,
-      vehicleType: t.vehicleType ?? "standard",
-      capacityBadge: t.remainingCapacity
-        ? capacityBadge(t.remainingCapacity.maxWeight)
-        : "N/A",
-    })
+    (t) => {
+      const basePrice = t.price ?? 0;
+      const { handlingFee, totalPrice } = computeFeesAndTotal(basePrice);
+      return {
+        tripId: (t._id as import("mongoose").Types.ObjectId).toString(),
+        rider: t.riderId
+          ? {
+              name: (t.riderId as { name?: string }).name ?? "",
+              phone: [((t.riderId as { countryCode?: string }).countryCode ?? ""), ((t.riderId as { phoneNumber?: string }).phoneNumber ?? "")].filter(Boolean).join(""),
+            }
+          : { name: "", phone: "" },
+        rating: null as number | null,
+        basePrice,
+        handlingFee,
+        totalPrice,
+        totalFare: totalPrice,
+        vehicleType: t.vehicleType ?? "standard",
+        capacityBadge: t.remainingCapacity
+          ? capacityBadge(t.remainingCapacity.maxWeight)
+          : "N/A",
+      };
+    }
   );
   return list;
 };
@@ -130,6 +142,8 @@ export const getTripDetails = async (tripId: string) => {
     throw createError("Trip is not published", HTTP_STATUS.BAD_REQUEST);
   }
   const t = trip as TripLean & { riderId?: { name?: string; phoneNumber?: string; countryCode?: string } };
+  const basePrice = t.price ?? 0;
+  const { handlingFee, totalPrice } = computeFeesAndTotal(basePrice);
   return {
     tripId: (t._id as import("mongoose").Types.ObjectId).toString(),
     route: {
@@ -139,7 +153,9 @@ export const getTripDetails = async (tripId: string) => {
     departureTime: t.departureTime,
     arrivalTime: t.arrivalTime,
     travelDate: t.travelDate,
-    basePrice: t.price ?? 0,
+    basePrice,
+    handlingFee,
+    totalPrice,
     riderProfile: t.riderId
       ? {
           name: (t.riderId as { name?: string }).name ?? "",
@@ -177,9 +193,7 @@ export const getPriceBreakdown = async (tripId: string, query: PriceBreakdownQue
   }
 
   const basePrice = trip.price ?? 0;
-  const handlingFee = Math.round((basePrice * HANDLING_FEE_PERCENT) / 100 * 100) / 100;
-  const platformFee = Math.round((basePrice * PLATFORM_FEE_PERCENT) / 100 * 100) / 100;
-  const totalPrice = Math.round((basePrice + handlingFee + platformFee) * 100) / 100;
+  const { handlingFee, totalPrice } = computeFeesAndTotal(basePrice);
 
   const from = trip.fromLocation;
   const to = trip.toLocation;
@@ -190,13 +204,9 @@ export const getPriceBreakdown = async (tripId: string, query: PriceBreakdownQue
     distanceKm: Math.round(distanceKm * 100) / 100,
     basePrice,
     handlingFee,
-    platformFee,
     totalPrice,
   };
 };
 
-export const computeTotalPrice = (basePrice: number) => {
-  const handlingFee = Math.round((basePrice * HANDLING_FEE_PERCENT) / 100 * 100) / 100;
-  const platformFee = Math.round((basePrice * PLATFORM_FEE_PERCENT) / 100 * 100) / 100;
-  return Math.round((basePrice + handlingFee + platformFee) * 100) / 100;
-};
+export const computeTotalPrice = (basePrice: number) =>
+  computeFeesAndTotal(basePrice).totalPrice;
