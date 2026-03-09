@@ -21,6 +21,10 @@ export const createBookingValidation = () => [
   body("packageImages.*").isString().notEmpty(),
   body("governmentIdImage").notEmpty().withMessage("governmentIdImage required"),
   body("agreedPrice").isFloat({ min: 0.01 }).withMessage("agreedPrice required and > 0"),
+  body("illegalItemsDeclaration")
+    .isBoolean()
+    .custom((value) => value === true)
+    .withMessage("illegalItemsDeclaration must be true"),
 ];
 
 export const payBookingValidation = () => [

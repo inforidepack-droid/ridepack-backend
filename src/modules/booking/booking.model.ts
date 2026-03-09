@@ -11,6 +11,7 @@ export interface IBooking extends Document {
   packageImages: string[];
   governmentIdImage: string;
   agreedPrice: number;
+  illegalItemsDeclaration: boolean;
   status: string;
   paymentTransactionId?: string;
   escrowAmount?: number;
@@ -47,6 +48,7 @@ const bookingSchema = new Schema<IBooking>(
     packageImages: [{ type: String, required: true }],
     governmentIdImage: { type: String, required: true },
     agreedPrice: { type: Number, required: true },
+    illegalItemsDeclaration: { type: Boolean, required: true },
     status: {
       type: String,
       enum: Object.values(BOOKING_STATUS),

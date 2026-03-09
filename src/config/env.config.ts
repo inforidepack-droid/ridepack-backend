@@ -22,6 +22,9 @@ export const env = {
   AWS_ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID ?? "",
   AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY ?? "",
   S3_BUCKET: process.env.S3_BUCKET ?? "",
+  VERIFF_API_KEY: process.env.VERIFF_API_KEY ?? "",
+  VERIFF_WEBHOOK_SECRET: process.env.VERIFF_WEBHOOK_SECRET ?? "",
+  VERIFF_CALLBACK_URL: process.env.VERIFF_CALLBACK_URL ?? "",
 } as const;
 
 export const isTwilioConfigured = (): boolean =>

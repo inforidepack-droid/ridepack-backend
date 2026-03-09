@@ -4,6 +4,7 @@ import * as tripRepository from "@/modules/trip/trip.repository";
 import { TRIP_STATUS } from "@/modules/trip/trip.constants";
 import type { ITrip } from "@/modules/trip/trip.model";
 import type { TripLean } from "@/modules/trip/trip.repository";
+import { ensureUserVerificationApprovedForTripPublish } from "@/modules/verification/verification.service";
 
 const hasLatLng = (loc: { lat?: number; lng?: number } | null | undefined): boolean =>
   Boolean(loc && typeof loc.lat === "number" && typeof loc.lng === "number");
@@ -129,6 +130,8 @@ export const publishTrip = async (
   tripId: string,
   riderId: string
 ): Promise<ITrip> => {
+  await ensureUserVerificationApprovedForTripPublish(riderId);
+
   const trip = await tripRepository.findByIdWithRider(tripId, riderId);
 
   if (!trip) {

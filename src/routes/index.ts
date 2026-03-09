@@ -6,6 +6,9 @@ import uploadRoutes from "@/modules/upload/upload.routes";
 import tripRoutes from "@/modules/trip/trip.routes";
 import bookingRoutes from "@/modules/booking/booking.routes";
 import riderRoutes from "@/modules/rider/rider.routes";
+import verificationRoutes, {
+  veriffWebhookRouter,
+} from "@/modules/verification/verification.routes";
 
 const router = Router();
 
@@ -16,5 +19,7 @@ router.use("/ride", rideRoutes);
 router.use("/upload", uploadRoutes);
 router.use("/trips", tripRoutes);
 router.use("/bookings", bookingRoutes);
+router.use("/verification", verificationRoutes);
+router.use("/webhooks", veriffWebhookRouter);
 
 export default router;

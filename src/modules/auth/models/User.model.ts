@@ -11,6 +11,12 @@ export interface IUser extends Document {
   isBlocked: boolean;
   isVerified: boolean;
   role: string;
+  verification?: {
+    provider?: string;
+    sessionId?: string;
+    status?: string;
+    verifiedAt?: Date;
+  };
   createdAt: Date;
   updatedAt: Date;
 }
@@ -56,6 +62,23 @@ const userSchema = new Schema<IUser>(
     isVerified: {
       type: Boolean,
       default: false,
+    },
+    verification: {
+      provider: {
+        type: String,
+        default: "veriff",
+      },
+      sessionId: {
+        type: String,
+      },
+      status: {
+        type: String,
+        enum: ["not_started", "pending", "approved", "declined", "expired"],
+        default: "not_started",
+      },
+      verifiedAt: {
+        type: Date,
+      },
     },
     role: {
       type: String,
