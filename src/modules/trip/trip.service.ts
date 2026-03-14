@@ -1,9 +1,13 @@
+import mongoose from "mongoose";
 import { createError } from "@/utils/appError";
 import { HTTP_STATUS } from "@/constants/http.constants";
 import * as tripRepository from "@/modules/trip/trip.repository";
 import { TRIP_STATUS } from "@/modules/trip/trip.constants";
 import type { ITrip } from "@/modules/trip/trip.model";
 import type { TripLean } from "@/modules/trip/trip.repository";
+import { ensureUserVerificationApprovedForTripPublish } from "@/modules/verification/verification.service";
+import Booking from "@/modules/booking/booking.model";
+import { BOOKING_STATUS } from "@/modules/booking/booking.constants";
 
 const hasLatLng = (loc: { lat?: number; lng?: number } | null | undefined): boolean =>
   Boolean(loc && typeof loc.lat === "number" && typeof loc.lng === "number");
@@ -129,6 +133,8 @@ export const publishTrip = async (
   tripId: string,
   riderId: string
 ): Promise<ITrip> => {
+  // await ensureUserVerificationApprovedForTripPublish(riderId);
+
   const trip = await tripRepository.findByIdWithRider(tripId, riderId);
 
   if (!trip) {
@@ -173,3 +179,36 @@ export const createDraftTrip = async (
   riderId: string,
   data: CreateDraftInput
 ): Promise<TripLean> => tripRepository.createDraft(riderId, data);
+
+export type MyPublishedTripItem = TripLean & { requestCount?: number };
+
+export const listMyPublishedTrips = async (
+  riderId: string
+): Promise<MyPublishedTripItem[]> => {
+  const trips = await tripRepository.findPublishedByRiderId(riderId);
+  if (trips.length === 0) return trips.map((t) => ({ ...t, requestCount: 0 }));
+
+  const tripIds = trips.map((t) => t._id);
+  const counts = await Booking.aggregate<{ _id: mongoose.Types.ObjectId; count: number }>([
+    {
+      $match: {
+        tripId: { $in: tripIds },
+        status: BOOKING_STATUS.PENDING_PAYMENT,
+      },
+    },
+    { $group: { _id: "$tripId", count: { $sum: 1 } } },
+  ]).exec();
+
+  const countByTripId = counts.reduce(
+    (acc, { _id, count }) => {
+      acc[_id.toString()] = count;
+      return acc;
+    },
+    {} as Record<string, number>
+  );
+
+  return trips.map((t) => ({
+    ...t,
+    requestCount: countByTripId[(t._id as mongoose.Types.ObjectId).toString()] ?? 0,
+  }));
+};

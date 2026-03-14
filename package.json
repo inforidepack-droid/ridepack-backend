@@ -24,6 +24,8 @@
   "license": "ISC",
   "dependencies": {
     "@aws-sdk/client-s3": "^3.997.0",
+    "@types/stripe-node": "^4.7.1",
+    "axios": "^1.13.6",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
@@ -36,6 +38,7 @@
     "multer": "^2.0.2",
     "redis": "^4.6.12",
     "socket.io": "^4.6.1",
+    "stripe": "^20.4.1",
     "tsconfig-paths": "^4.2.0",
     "twilio": "^5.12.2",
     "winston": "^3.11.0",
@@ -43,6 +46,7 @@
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
+    "@types/stripe": "^10.0.0",
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
     "@types/jsonwebtoken": "^9.0.5",

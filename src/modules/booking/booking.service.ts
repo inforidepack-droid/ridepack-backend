@@ -9,6 +9,7 @@ import { BOOKING_STATUS, MIN_PACKAGE_IMAGES } from "@/modules/booking/booking.co
 import Trip from "@/modules/trip/trip.model";
 import User from "@/modules/auth/models/User.model";
 import Transaction from "@/modules/booking/transaction.model";
+import { ensureUserVerificationApprovedForBooking } from "@/modules/verification/verification.service";
 
 export type CreateBookingBody = {
   tripId: string;
@@ -18,6 +19,7 @@ export type CreateBookingBody = {
   packageImages: string[];
   governmentIdImage: string;
   agreedPrice: number;
+  illegalItemsDeclaration: boolean;
 };
 
 const parcelFits = (
@@ -62,6 +64,13 @@ export const createBooking = async (
     throw createError("Agreed price must be positive", HTTP_STATUS.BAD_REQUEST);
   }
 
+  if (!body.illegalItemsDeclaration) {
+    throw createError(
+      "Sender must confirm that the parcel does not contain illegal items",
+      HTTP_STATUS.BAD_REQUEST
+    );
+  }
+
   const trip = await tripRepository.findById(tripId);
   if (!trip) {
     throw createError("Trip not found", HTTP_STATUS.NOT_FOUND);
@@ -75,13 +84,15 @@ export const createBooking = async (
     throw createError("Sender cannot book own trip", HTTP_STATUS.BAD_REQUEST);
   }
 
-  const sender = await User.findById(senderId).select("isBlocked").lean().exec();
+  const sender = await User.findById(senderId).select("isBlocked verification").lean().exec();
   if (!sender) {
     throw createError("Sender account not found", HTTP_STATUS.NOT_FOUND);
   }
   if ((sender as { isBlocked?: boolean }).isBlocked) {
     throw createError("Sender account is blocked", HTTP_STATUS.FORBIDDEN);
   }
+
+  await ensureUserVerificationApprovedForBooking(senderId);
 
   const remaining = trip.remainingCapacity;
   if (!remaining) {
@@ -195,4 +206,17 @@ export const payBooking = async (
   const updated = await bookingRepository.findById(bookingId);
   if (!updated) throw createError("Booking not found after payment", HTTP_STATUS.INTERNAL_SERVER_ERROR);
   return updated;
+};
+
+const LIVE_STATUSES = [BOOKING_STATUS.CONFIRMED, BOOKING_STATUS.PICKED_UP];
+const COMPLETED_STATUSES = [BOOKING_STATUS.DELIVERED];
+
+export type MyBookingsStatusFilter = "live" | "completed";
+
+export const listMyBookings = async (
+  senderId: string,
+  status: MyBookingsStatusFilter
+): Promise<bookingRepository.BookingLean[]> => {
+  const statuses = status === "live" ? LIVE_STATUSES : COMPLETED_STATUSES;
+  return bookingRepository.findBySenderIdAndStatuses(senderId, statuses);
 };

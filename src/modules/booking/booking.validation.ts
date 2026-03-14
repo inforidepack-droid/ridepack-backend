@@ -1,5 +1,13 @@
-import { body } from "express-validator";
+import { body, query } from "express-validator";
 import { MIN_PACKAGE_IMAGES } from "@/modules/booking/booking.constants";
+
+export const listMyBookingsValidation = () => [
+  query("status")
+    .notEmpty()
+    .withMessage("status is required")
+    .isIn(["live", "completed"])
+    .withMessage("status must be 'live' or 'completed'"),
+];
 
 const contactValidator = (prefix: string) => [
   body(`${prefix}.name`).notEmpty().trim().withMessage(`${prefix}.name required`),
@@ -21,6 +29,10 @@ export const createBookingValidation = () => [
   body("packageImages.*").isString().notEmpty(),
   body("governmentIdImage").notEmpty().withMessage("governmentIdImage required"),
   body("agreedPrice").isFloat({ min: 0.01 }).withMessage("agreedPrice required and > 0"),
+  body("illegalItemsDeclaration")
+    .isBoolean()
+    .custom((value) => value === true)
+    .withMessage("illegalItemsDeclaration must be true"),
 ];
 
 export const payBookingValidation = () => [

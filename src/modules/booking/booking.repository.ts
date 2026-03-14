@@ -41,6 +41,19 @@ export const findByIdWithSender = (
     .lean()
     .exec() as Promise<BookingLean | null>;
 
+export const findBySenderIdAndStatuses = (
+  senderId: string,
+  statuses: string[]
+): Promise<BookingLean[]> =>
+  Booking.find({
+    senderId: new mongoose.Types.ObjectId(senderId),
+    status: { $in: statuses },
+  })
+    .sort({ createdAt: -1 })
+    .populate("tripId", "fromLocation toLocation travelDate departureTime arrivalTime riderId")
+    .lean()
+    .exec() as Promise<BookingLean[]>;
+
 /**
  * Atomic: confirm booking and deduct trip remaining capacity. Runs inside a transaction.
  */

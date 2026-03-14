@@ -11,6 +11,14 @@ export interface IUser extends Document {
   isBlocked: boolean;
   isVerified: boolean;
   role: string;
+  stripeCustomerId?: string;
+  stripeAccountId?: string;
+  verification?: {
+    provider?: string;
+    sessionId?: string;
+    status?: string;
+    verifiedAt?: Date;
+  };
   createdAt: Date;
   updatedAt: Date;
 }
@@ -57,10 +65,33 @@ const userSchema = new Schema<IUser>(
       type: Boolean,
       default: false,
     },
+    verification: {
+      provider: {
+        type: String,
+        default: "veriff",
+      },
+      sessionId: {
+        type: String,
+      },
+      status: {
+        type: String,
+        enum: ["not_started", "pending", "approved", "declined", "expired"],
+        default: "not_started",
+      },
+      verifiedAt: {
+        type: Date,
+      },
+    },
     role: {
       type: String,
       enum: ["user", "admin", "rider", "sender"],
       default: "user",
+    },
+    stripeCustomerId: {
+      type: String,
+    },
+    stripeAccountId: {
+      type: String,
     },
   },
   {
