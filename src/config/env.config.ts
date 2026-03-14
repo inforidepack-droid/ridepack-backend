@@ -25,6 +25,8 @@ export const env = {
   VERIFF_API_KEY: process.env.VERIFF_API_KEY ?? "",
   VERIFF_WEBHOOK_SECRET: process.env.VERIFF_WEBHOOK_SECRET ?? "",
   VERIFF_CALLBACK_URL: process.env.VERIFF_CALLBACK_URL ?? "",
+  STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY ?? "",
+  STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET ?? "",
 } as const;
 
 export const isTwilioConfigured = (): boolean =>

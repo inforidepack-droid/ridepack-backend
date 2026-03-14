@@ -9,6 +9,8 @@ import riderRoutes from "@/modules/rider/rider.routes";
 import verificationRoutes, {
   veriffWebhookRouter,
 } from "@/modules/verification/verification.routes";
+import paymentsRoutes from "@/modules/payments/payment.routes";
+import stripeRoutes, { stripeWebhookRouter } from "@/modules/stripe/stripe.routes";
 
 const router = Router();
 
@@ -20,6 +22,9 @@ router.use("/upload", uploadRoutes);
 router.use("/trips", tripRoutes);
 router.use("/bookings", bookingRoutes);
 router.use("/verification", verificationRoutes);
+router.use("/payments", paymentsRoutes);
+router.use("/stripe", stripeRoutes);
 router.use("/webhooks", veriffWebhookRouter);
+router.use("/webhooks", stripeWebhookRouter);
 
 export default router;

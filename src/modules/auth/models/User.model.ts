@@ -11,6 +11,8 @@ export interface IUser extends Document {
   isBlocked: boolean;
   isVerified: boolean;
   role: string;
+  stripeCustomerId?: string;
+  stripeAccountId?: string;
   verification?: {
     provider?: string;
     sessionId?: string;
@@ -84,6 +86,12 @@ const userSchema = new Schema<IUser>(
       type: String,
       enum: ["user", "admin", "rider", "sender"],
       default: "user",
+    },
+    stripeCustomerId: {
+      type: String,
+    },
+    stripeAccountId: {
+      type: String,
     },
   },
   {

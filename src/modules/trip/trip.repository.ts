@@ -114,3 +114,12 @@ export const atomicPublish = (
   )
     .lean()
     .exec() as Promise<TripLean | null>;
+
+export const findPublishedByRiderId = (riderId: string): Promise<TripLean[]> =>
+  Trip.find({
+    riderId: new mongoose.Types.ObjectId(riderId),
+    status: TRIP_STATUS.PUBLISHED,
+  })
+    .sort({ publishedAt: -1, createdAt: -1 })
+    .lean()
+    .exec() as Promise<TripLean[]>;

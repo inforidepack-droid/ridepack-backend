@@ -2,7 +2,11 @@ import { Request, Response } from "express";
 import { asyncHandler } from "@/middlewares/asyncHandler";
 import { createError } from "@/utils/appError";
 import { sendSuccess, sendCreated } from "@/utils/responseFormatter";
-import { publishTrip, createDraftTrip } from "@/modules/trip/trip.service";
+import {
+  publishTrip,
+  createDraftTrip,
+  listMyPublishedTrips,
+} from "@/modules/trip/trip.service";
 import { searchTrips, getTripDetails, getPriceBreakdown } from "@/modules/trip/trip.search.service";
 import { AuthRequest } from "@/middlewares/auth";
 
@@ -50,5 +54,13 @@ export const getPriceBreakdownController = asyncHandler(
     const tripId = req.params.tripId as string;
     const breakdown = await getPriceBreakdown(tripId, req.query as import("@/modules/trip/trip.search.service").PriceBreakdownQuery);
     sendSuccess(res, { data: breakdown });
+  }
+);
+
+export const listMyPublishedTripsController = asyncHandler(
+  async (req: AuthRequest, res: Response): Promise<void> => {
+    if (!req.user) throw createError("Unauthorized", 401);
+    const trips = await listMyPublishedTrips(req.user.userId);
+    sendSuccess(res, { data: { trips } });
   }
 );

@@ -207,3 +207,16 @@ export const payBooking = async (
   if (!updated) throw createError("Booking not found after payment", HTTP_STATUS.INTERNAL_SERVER_ERROR);
   return updated;
 };
+
+const LIVE_STATUSES = [BOOKING_STATUS.CONFIRMED, BOOKING_STATUS.PICKED_UP];
+const COMPLETED_STATUSES = [BOOKING_STATUS.DELIVERED];
+
+export type MyBookingsStatusFilter = "live" | "completed";
+
+export const listMyBookings = async (
+  senderId: string,
+  status: MyBookingsStatusFilter
+): Promise<bookingRepository.BookingLean[]> => {
+  const statuses = status === "live" ? LIVE_STATUSES : COMPLETED_STATUSES;
+  return bookingRepository.findBySenderIdAndStatuses(senderId, statuses);
+};
