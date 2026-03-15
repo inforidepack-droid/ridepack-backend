@@ -4,6 +4,7 @@ import { createError } from "@/utils/appError";
 import { sendSuccess, sendCreated } from "@/utils/responseFormatter";
 import {
   createBooking,
+  acceptBookingRequest,
   payBooking,
   listMyBookings,
 } from "@/modules/booking/booking.service";
@@ -19,6 +20,15 @@ export const createBookingController = asyncHandler(
     if (!req.user) throw createError("Unauthorized", 401);
     const booking = await createBooking(req.user.userId, req.body as CreateBookingBody);
     sendCreated(res, { data: { booking }, message: "Booking created" });
+  }
+);
+
+export const acceptBookingController = asyncHandler(
+  async (req: AuthRequest, res: Response): Promise<void> => {
+    if (!req.user) throw createError("Unauthorized", 401);
+    const bookingId = req.params.id as string;
+    const booking = await acceptBookingRequest(req.user.userId, bookingId);
+    sendSuccess(res, { data: { booking }, message: "Booking request accepted" });
   }
 );
 
