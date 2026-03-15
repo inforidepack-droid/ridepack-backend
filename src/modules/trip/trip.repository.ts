@@ -120,6 +120,7 @@ export const findPublishedByRiderId = (riderId: string): Promise<TripLean[]> =>
     riderId: new mongoose.Types.ObjectId(riderId),
     status: TRIP_STATUS.PUBLISHED,
   })
+    .populate("riderId", "name email profileImage phoneNumber countryCode")
     .sort({ publishedAt: -1, createdAt: -1 })
     .lean()
     .exec() as Promise<TripLean[]>;

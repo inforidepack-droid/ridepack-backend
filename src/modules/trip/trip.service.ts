@@ -2,11 +2,11 @@ import mongoose from "mongoose";
 import { createError } from "@/utils/appError";
 import { HTTP_STATUS } from "@/constants/http.constants";
 import * as tripRepository from "@/modules/trip/trip.repository";
+import * as bookingRepository from "@/modules/booking/booking.repository";
 import { TRIP_STATUS } from "@/modules/trip/trip.constants";
 import type { ITrip } from "@/modules/trip/trip.model";
 import type { TripLean } from "@/modules/trip/trip.repository";
 import { ensureUserVerificationApprovedForTripPublish } from "@/modules/verification/verification.service";
-import Booking from "@/modules/booking/booking.model";
 import { BOOKING_STATUS } from "@/modules/booking/booking.constants";
 
 const hasLatLng = (loc: { lat?: number; lng?: number } | null | undefined): boolean =>
@@ -180,35 +180,75 @@ export const createDraftTrip = async (
   data: CreateDraftInput
 ): Promise<TripLean> => tripRepository.createDraft(riderId, data);
 
-export type MyPublishedTripItem = TripLean & { requestCount?: number };
+export type BookingRequestDetail = {
+  _id: mongoose.Types.ObjectId;
+  status: string;
+  parcel: bookingRepository.BookingRequestLean["parcel"];
+  senderDetails: bookingRepository.BookingRequestLean["senderDetails"];
+  receiverDetails: bookingRepository.BookingRequestLean["receiverDetails"];
+  packageImages: string[];
+  agreedPrice: number;
+  createdAt: Date;
+  sender?: { name?: string; email?: string; phoneNumber?: string; countryCode?: string };
+};
+
+export type MyPublishedTripItem = TripLean & {
+  requestCount?: number;
+  requests?: BookingRequestDetail[];
+};
+
+const PENDING_REQUEST_STATUSES = [
+  BOOKING_STATUS.PENDING_RIDER_ACCEPT,
+  BOOKING_STATUS.PENDING_PAYMENT,
+];
 
 export const listMyPublishedTrips = async (
   riderId: string
 ): Promise<MyPublishedTripItem[]> => {
   const trips = await tripRepository.findPublishedByRiderId(riderId);
-  if (trips.length === 0) return trips.map((t) => ({ ...t, requestCount: 0 }));
+  if (trips.length === 0) return trips.map((t) => ({ ...t, requestCount: 0, requests: [] }));
 
-  const tripIds = trips.map((t) => t._id);
-  const counts = await Booking.aggregate<{ _id: mongoose.Types.ObjectId; count: number }>([
-    {
-      $match: {
-        tripId: { $in: tripIds },
-        status: BOOKING_STATUS.PENDING_PAYMENT,
-      },
-    },
-    { $group: { _id: "$tripId", count: { $sum: 1 } } },
-  ]).exec();
-
-  const countByTripId = counts.reduce(
-    (acc, { _id, count }) => {
-      acc[_id.toString()] = count;
-      return acc;
-    },
-    {} as Record<string, number>
+  const tripIds = trips.map((t) => t._id as mongoose.Types.ObjectId);
+  const requests = await bookingRepository.findByTripIdsAndStatuses(
+    tripIds,
+    PENDING_REQUEST_STATUSES
   );
 
-  return trips.map((t) => ({
-    ...t,
-    requestCount: countByTripId[(t._id as mongoose.Types.ObjectId).toString()] ?? 0,
-  }));
+  const requestsByTripId = requests.reduce(
+    (acc, b) => {
+      const tid = (b.tripId as unknown as mongoose.Types.ObjectId).toString();
+      if (!acc[tid]) acc[tid] = [];
+      acc[tid].push({
+        _id: b._id,
+        status: b.status,
+        parcel: b.parcel,
+        senderDetails: b.senderDetails,
+        receiverDetails: b.receiverDetails,
+        packageImages: b.packageImages,
+        agreedPrice: b.agreedPrice,
+        createdAt: b.createdAt,
+        sender:
+          b.senderId && typeof b.senderId === "object" && "name" in b.senderId
+            ? {
+                name: (b.senderId as { name?: string }).name,
+                email: (b.senderId as { email?: string }).email,
+                phoneNumber: (b.senderId as { phoneNumber?: string }).phoneNumber,
+                countryCode: (b.senderId as { countryCode?: string }).countryCode,
+              }
+            : undefined,
+      });
+      return acc;
+    },
+    {} as Record<string, BookingRequestDetail[]>
+  );
+
+  return trips.map((t) => {
+    const tid = (t._id as mongoose.Types.ObjectId).toString();
+    const tripRequests = requestsByTripId[tid] ?? [];
+    return {
+      ...t,
+      requestCount: tripRequests.length,
+      requests: tripRequests,
+    };
+  });
 };
