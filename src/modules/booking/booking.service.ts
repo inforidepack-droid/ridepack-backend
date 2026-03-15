@@ -136,12 +136,12 @@ export const acceptBookingRequest = async (
   if (!booking) {
     throw createError("Booking not found", HTTP_STATUS.NOT_FOUND);
   }
-  if (booking.status !== BOOKING_STATUS.PENDING_RIDER_ACCEPT) {
-    throw createError(
-      `Booking cannot be accepted. Current status: ${booking.status}`,
-      HTTP_STATUS.BAD_REQUEST
-    );
-  }
+  // if (booking.status !== BOOKING_STATUS.PENDING_RIDER_ACCEPT) {
+  //   throw createError(
+  //     `Booking cannot be accepted. Current status: ${booking.status}`,
+  //     HTTP_STATUS.BAD_REQUEST
+  //   );
+  // }
 
   const trip = await tripRepository.findById((booking.tripId as unknown as mongoose.Types.ObjectId).toString());
   if (!trip) {
