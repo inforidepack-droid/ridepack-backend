@@ -33,6 +33,7 @@ const startServer = async (): Promise<void> => {
 
     // Start server
     httpServer.listen(PORT, () => {
+      console.log(process.env.NODE_ENV);
       logger.info(`Server running on port ${PORT} in ${process.env.NODE_ENV || "development"} mode`);
     });
 

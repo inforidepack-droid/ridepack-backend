@@ -24,6 +24,10 @@ export const generateRefreshToken = (payload: TokenPayload): string => {
   } as SignOptions);
 };
 
+export const generateTokenWithExpiry = (payload: TokenPayload, expiresIn: string): string => {
+  return jwt.sign(payload, JWT_SECRET, { expiresIn } as SignOptions);
+};
+
 export const verifyToken = (token: string): TokenPayload => {
   try {
     return jwt.verify(token, JWT_SECRET) as TokenPayload;

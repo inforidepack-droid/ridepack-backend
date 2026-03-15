@@ -52,6 +52,9 @@ export const markOtpVerified = (phoneNumber: string, countryCode: string): Promi
 export const findUserByPhone = (phoneNumber: string, countryCode: string): Promise<IUser | null> =>
   User.findOne({ phoneNumber, countryCode }).exec();
 
+export const findUserByEmail = (email: string): Promise<IUser | null> =>
+  User.findOne({ email: email.toLowerCase().trim() }).exec();
+
 export const createUser = (data: Partial<IUser>): Promise<IUser> => User.create(data);
 
 export const updateUserById = (id: string, data: Partial<IUser>): Promise<IUser | null> =>
