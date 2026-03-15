@@ -7,10 +7,13 @@ export interface IUser extends Document {
   name?: string;
   phoneNumber?: string;
   countryCode?: string;
+  googleId?: string;
+  profileImage?: string;
   isPhoneVerified: boolean;
   isBlocked: boolean;
   isVerified: boolean;
   role: string;
+  authProvider?: "google" | "phone";
   stripeCustomerId?: string;
   stripeAccountId?: string;
   verification?: {
@@ -39,6 +42,16 @@ const userSchema = new Schema<IUser>(
       select: false,
     },
     name: {
+      type: String,
+      required: false,
+      trim: true,
+    },
+    googleId: {
+      type: String,
+      required: false,
+      sparse: true,
+    },
+    profileImage: {
       type: String,
       required: false,
       trim: true,
@@ -86,6 +99,11 @@ const userSchema = new Schema<IUser>(
       type: String,
       enum: ["user", "admin", "rider", "sender"],
       default: "user",
+    },
+    authProvider: {
+      type: String,
+      enum: ["google", "phone"],
+      default: "phone",
     },
     stripeCustomerId: {
       type: String,

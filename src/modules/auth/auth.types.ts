@@ -39,3 +39,18 @@ export interface VerifyOtpResponse {
     refreshToken: string;
   };
 }
+
+export interface GoogleAuthRequestBody {
+  idToken: string;
+}
+
+export interface GoogleAuthResponse {
+  token: string;
+  user: {
+    id: string;
+    name: string;
+    email: string;
+    profileImage: string;
+    role: string;
+  };
+}

@@ -3,6 +3,7 @@ import { asyncHandler } from "@/middlewares/asyncHandler";
 import { createError } from "@/utils/appError";
 import { sendSuccess } from "@/utils/responseFormatter";
 import { refreshToken, logout } from "@/modules/auth/auth.service";
+import { googleLogin } from "@/modules/auth/auth.google.service";
 import { RefreshTokenDto } from "@/modules/auth/auth.types";
 import { AuthRequest } from "@/middlewares/auth";
 
@@ -16,4 +17,10 @@ export const logoutController = asyncHandler(async (req: AuthRequest, res: Respo
   if (!req.user) throw createError("Unauthorized", 401);
   await logout(req.user.userId);
   sendSuccess(res, { message: "Logged out successfully" });
+});
+
+export const googleAuthController = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  const { idToken } = req.body as { idToken: string };
+  const result = await googleLogin(idToken);
+  sendSuccess(res, { data: result });
 });

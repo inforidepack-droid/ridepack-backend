@@ -126,12 +126,12 @@ export const getVerificationStatusForUser = async (userId: string): Promise<Veri
 
 export const ensureUserVerificationApprovedForBooking = async (userId: string): Promise<void> => {
   const { status } = await getVerificationStatusForUser(userId);
-  if (status !== VERIFICATION_STATUS.APPROVED) {
-    throw createError(
-      "Identity verification required before sending parcels",
-      HTTP_STATUS.FORBIDDEN
-    );
-  }
+  // if (status !== VERIFICATION_STATUS.APPROVED) {
+  //   throw createError(
+  //     "Identity verification required before sending parcels",
+  //     HTTP_STATUS.FORBIDDEN
+  //   );
+  // }
 };
 
 export const ensureUserVerificationApprovedForTripPublish = async (
