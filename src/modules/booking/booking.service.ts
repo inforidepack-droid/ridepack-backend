@@ -124,6 +124,7 @@ export const createBooking = async (
     packageImages,
     governmentIdImage,
     agreedPrice,
+    illegalItemsDeclaration: body.illegalItemsDeclaration,
   });
 };
 

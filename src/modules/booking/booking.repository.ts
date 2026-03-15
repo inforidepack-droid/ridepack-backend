@@ -17,6 +17,7 @@ export type CreateBookingInput = {
   packageImages: string[];
   governmentIdImage: string;
   agreedPrice: number;
+  illegalItemsDeclaration: boolean;
 };
 
 export const create = (data: CreateBookingInput): Promise<BookingLean> =>
