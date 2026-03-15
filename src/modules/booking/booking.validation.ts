@@ -1,4 +1,4 @@
-import { body, query } from "express-validator";
+import { body, param, query } from "express-validator";
 import { MIN_PACKAGE_IMAGES } from "@/modules/booking/booking.constants";
 
 export const listMyBookingsValidation = () => [
@@ -33,6 +33,10 @@ export const createBookingValidation = () => [
     .isBoolean()
     .custom((value) => value === true)
     .withMessage("illegalItemsDeclaration must be true"),
+];
+
+export const acceptBookingValidation = () => [
+  param("id").notEmpty().withMessage("Booking id is required"),
 ];
 
 export const payBookingValidation = () => [

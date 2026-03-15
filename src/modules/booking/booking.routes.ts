@@ -1,11 +1,13 @@
 import { Router } from "express";
 import {
   createBookingController,
+  acceptBookingController,
   payBookingController,
   listMyBookingsController,
 } from "@/modules/booking/booking.controller";
 import {
   createBookingValidation,
+  acceptBookingValidation,
   payBookingValidation,
   listMyBookingsValidation,
 } from "@/modules/booking/booking.validation";
@@ -22,6 +24,7 @@ router.get(
   listMyBookingsController
 );
 router.post("/", authenticate, createBookingValidation(), validate, createBookingController);
+router.post("/:id/accept", authenticate, acceptBookingValidation(), validate, acceptBookingController);
 router.post("/:id/pay", authenticate, payBookingValidation(), validate, payBookingController);
 
 export default router;

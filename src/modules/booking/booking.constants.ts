@@ -1,4 +1,5 @@
 export const BOOKING_STATUS = {
+  PENDING_RIDER_ACCEPT: "pending_rider_accept",
   PENDING_PAYMENT: "pending_payment",
   CONFIRMED: "confirmed",
   PICKED_UP: "picked_up",

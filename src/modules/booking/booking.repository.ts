@@ -25,7 +25,7 @@ export const create = (data: CreateBookingInput): Promise<BookingLean> =>
     ...data,
     tripId: new mongoose.Types.ObjectId(data.tripId),
     senderId: new mongoose.Types.ObjectId(data.senderId),
-    status: BOOKING_STATUS.PENDING_PAYMENT,
+    status: BOOKING_STATUS.PENDING_RIDER_ACCEPT,
   }).then((doc) => doc.toObject() as BookingLean);
 
 export const findById = (bookingId: string): Promise<BookingLean | null> =>
@@ -39,6 +39,18 @@ export const findByIdWithSender = (
     _id: bookingId,
     senderId: new mongoose.Types.ObjectId(senderId),
   })
+    .lean()
+    .exec() as Promise<BookingLean | null>;
+
+export const updateStatus = (
+  bookingId: string,
+  status: string
+): Promise<BookingLean | null> =>
+  Booking.findByIdAndUpdate(
+    bookingId,
+    { $set: { status } },
+    { new: true }
+  )
     .lean()
     .exec() as Promise<BookingLean | null>;
 

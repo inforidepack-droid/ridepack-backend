@@ -128,6 +128,45 @@ export const createBooking = async (
   });
 };
 
+export const acceptBookingRequest = async (
+  riderId: string,
+  bookingId: string
+): Promise<bookingRepository.BookingLean> => {
+  const booking = await bookingRepository.findById(bookingId);
+  if (!booking) {
+    throw createError("Booking not found", HTTP_STATUS.NOT_FOUND);
+  }
+  if (booking.status !== BOOKING_STATUS.PENDING_RIDER_ACCEPT) {
+    throw createError(
+      `Booking cannot be accepted. Current status: ${booking.status}`,
+      HTTP_STATUS.BAD_REQUEST
+    );
+  }
+
+  const trip = await tripRepository.findById((booking.tripId as unknown as mongoose.Types.ObjectId).toString());
+  if (!trip) {
+    throw createError("Trip not found", HTTP_STATUS.NOT_FOUND);
+  }
+  const tripRiderId = (trip.riderId as unknown as mongoose.Types.ObjectId).toString();
+  if (tripRiderId !== riderId) {
+    throw createError("Only the trip rider can accept this booking request", HTTP_STATUS.FORBIDDEN);
+  }
+  if (trip.status !== TRIP_STATUS.PUBLISHED) {
+    throw createError("Trip is not published", HTTP_STATUS.BAD_REQUEST);
+  }
+
+  const remaining = trip.remainingCapacity;
+  if (!remaining || booking.parcel.weight > remaining.maxWeight) {
+    throw createError("Insufficient remaining capacity for this parcel", HTTP_STATUS.BAD_REQUEST);
+  }
+
+  const updated = await bookingRepository.updateStatus(bookingId, BOOKING_STATUS.PENDING_PAYMENT);
+  if (!updated) {
+    throw createError("Failed to accept booking", HTTP_STATUS.INTERNAL_SERVER_ERROR);
+  }
+  return updated;
+};
+
 export type PayBookingBody = { paymentSignature?: string; paymentIntentId?: string };
 
 export const payBooking = async (
