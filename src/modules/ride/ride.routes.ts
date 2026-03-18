@@ -1,5 +1,10 @@
 import { Router } from "express";
-import { createRideController, getRideController, getMyRidesController } from "@/modules/ride/ride.controller";
+import {
+  createRideController,
+  getRideController,
+  getMyRidesController,
+  cancelRideController,
+} from "@/modules/ride/ride.controller";
 import { createRideValidation } from "@/modules/ride/ride.validation";
 import { authenticate } from "@/middlewares/auth";
 import { validate } from "@/middlewares/validation";
@@ -11,5 +16,6 @@ router.use(authenticate);
 router.post("/", createRideValidation(), validate, createRideController);
 router.get("/", getMyRidesController);
 router.get("/:id", getRideController);
+router.patch("/:id/cancel", cancelRideController);
 
 export default router;

@@ -75,6 +75,8 @@ export const startVerificationSession = async (userId: string): Promise<StartVer
     },
   };
 
+  console.log(payload,env.VERIFF_API_KEY,"payload");
+
   const response = await axios.post<VeriffSessionResponse>(
     "https://stationapi.veriff.com/v1/sessions",
     payload,
@@ -86,6 +88,8 @@ export const startVerificationSession = async (userId: string): Promise<StartVer
       timeout: 10000,
     }
   );
+
+  console.log(response,"dadfdsfsdfs");
 
   const session = response.data.verification;
   if (!session?.id || !session.url) {
