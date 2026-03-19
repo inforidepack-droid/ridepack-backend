@@ -6,7 +6,6 @@ export interface StartVerificationResult {
 
 export interface VerificationState {
   status: VerificationStatus;
-  verifiedAt?: Date | null;
 }
 
 export interface VeriffSessionResponse {

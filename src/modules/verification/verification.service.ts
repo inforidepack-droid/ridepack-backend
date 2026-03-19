@@ -36,6 +36,11 @@ const timingSafeEquals = (a: string, b: string): boolean => {
   return crypto.timingSafeEqual(aBuf, bBuf);
 };
 
+const VERIFF_SESSION_TTL_MS = 24 * 60 * 60 * 1000;
+
+const isKnownVerificationStatus = (status: unknown): status is VerificationStatus =>
+  Object.values(VERIFICATION_STATUS).includes(status as VerificationStatus);
+
 export const startVerificationSession = async (userId: string): Promise<StartVerificationResult> => {
   if (!env.VERIFF_API_KEY || !env.VERIFF_CALLBACK_URL) {
     throw createError("Veriff integration is not configured", HTTP_STATUS.INTERNAL_SERVER_ERROR);
@@ -49,16 +54,34 @@ export const startVerificationSession = async (userId: string): Promise<StartVer
     throw createError("Blocked users cannot start verification", HTTP_STATUS.FORBIDDEN);
   }
 
-  const existingStatus =
-    (user as { verification?: { status?: VerificationStatus } }).verification?.status ||
-    VERIFICATION_STATUS.NOT_STARTED;
+  const verification = (user as { verification?: Record<string, unknown> }).verification ?? {};
+  const existingStatus = isKnownVerificationStatus(verification.status) ? verification.status : VERIFICATION_STATUS.NOT_STARTED;
 
   if (existingStatus === VERIFICATION_STATUS.APPROVED) {
-    throw createError("User is already verified", HTTP_STATUS.BAD_REQUEST);
+    throw createError("Identity verification already completed", HTTP_STATUS.FORBIDDEN);
   }
-  if (existingStatus === VERIFICATION_STATUS.PENDING) {
-    throw createError("Verification is already in progress", HTTP_STATUS.BAD_REQUEST);
+
+  const pendingVerificationUrl =
+    typeof verification.verificationUrl === "string" ? verification.verificationUrl : undefined;
+  const pendingCreatedAt =
+    verification.createdAt instanceof Date
+      ? verification.createdAt
+      : typeof verification.createdAt === "string"
+        ? (() => {
+            const d = new Date(verification.createdAt);
+            return Number.isNaN(d.getTime()) ? undefined : d;
+          })()
+        : undefined;
+
+  if (existingStatus === VERIFICATION_STATUS.PENDING && pendingVerificationUrl && pendingCreatedAt) {
+    const ageMs = Date.now() - pendingCreatedAt.getTime();
+    if (ageMs <= VERIFF_SESSION_TTL_MS) {
+      return { verificationUrl: pendingVerificationUrl };
+    }
   }
+
+  // If pending but older than 24h, or pending without url/createdAt, create a new session.
+  // If declined/expired/not_started, retries are allowed by requirements.
 
   const userName = (user as { name?: string }).name;
   const firstName =
@@ -75,8 +98,6 @@ export const startVerificationSession = async (userId: string): Promise<StartVer
     },
   };
 
-  console.log(payload,env.VERIFF_API_KEY,"payload");
-
   const response = await axios.post<VeriffSessionResponse>(
     "https://stationapi.veriff.com/v1/sessions",
     payload,
@@ -89,20 +110,21 @@ export const startVerificationSession = async (userId: string): Promise<StartVer
     }
   );
 
-  console.log(response,"dadfdsfsdfs");
-
   const session = response.data.verification;
   if (!session?.id || !session.url) {
     throw createError("Failed to create verification session", HTTP_STATUS.INTERNAL_SERVER_ERROR);
   }
 
+  const now = new Date();
   await User.findByIdAndUpdate(
     userId,
     {
       verification: {
         provider: VERIFICATION_PROVIDER.VERIFF,
         sessionId: session.id,
+        verificationUrl: session.url,
         status: VERIFICATION_STATUS.PENDING,
+        createdAt: now,
         verifiedAt: null,
       },
     },
@@ -118,13 +140,11 @@ export const getVerificationStatusForUser = async (userId: string): Promise<Veri
     throw createError("User not found", HTTP_STATUS.NOT_FOUND);
   }
 
-  const verification = (user as {
-    verification?: { status?: VerificationStatus; verifiedAt?: Date };
-  }).verification;
+  const verification = (user as { verification?: { status?: unknown } }).verification;
+  const storedStatus = isKnownVerificationStatus(verification?.status) ? verification?.status : VERIFICATION_STATUS.NOT_STARTED;
 
   return {
-    status: verification?.status || VERIFICATION_STATUS.NOT_STARTED,
-    verifiedAt: verification?.verifiedAt || null,
+    status: storedStatus,
   };
 };
 
@@ -186,32 +206,49 @@ export const handleVeriffWebhook = async (
 
   const normalizedStatus = resolveVerificationStatus(decision);
 
-  const user = await User.findOne({ "verification.sessionId": sessionId }).exec();
+  // Only update user verification states we explicitly support.
+  if (
+    normalizedStatus !== VERIFICATION_STATUS.APPROVED &&
+    normalizedStatus !== VERIFICATION_STATUS.DECLINED &&
+    normalizedStatus !== VERIFICATION_STATUS.EXPIRED
+  ) {
+    return;
+  }
+
+  const user = await User.findOne({ "verification.sessionId": sessionId }).select("verification.status verification.verifiedAt _id").exec();
   if (!user) {
     // Unknown session – acknowledge without error to avoid retries
     return;
   }
 
-  const update: {
-    verification: {
-      provider: string;
-      sessionId: string;
-      status: VerificationStatus;
-      verifiedAt?: Date | null;
-    };
-  } = {
-    verification: {
-      provider: VERIFICATION_PROVIDER.VERIFF,
-      sessionId,
-      status: normalizedStatus,
-      verifiedAt: null,
-    },
-  };
+  const currentStatus = isKnownVerificationStatus(user.verification?.status) ? (user.verification?.status as VerificationStatus) : VERIFICATION_STATUS.NOT_STARTED;
+  const alreadyApproved = currentStatus === VERIFICATION_STATUS.APPROVED;
 
-  if (normalizedStatus === VERIFICATION_STATUS.APPROVED) {
-    update.verification.verifiedAt = new Date();
+  // Prevent late duplicate webhooks from downgrading an approved user.
+  if (alreadyApproved && normalizedStatus !== VERIFICATION_STATUS.APPROVED) {
+    return;
   }
 
-  await User.findByIdAndUpdate(user._id, update, { new: true }).lean().exec();
+  const now = new Date();
+  const existingVerifiedAt = user.verification?.verifiedAt ?? null;
+  const verifiedAtToSet =
+    normalizedStatus === VERIFICATION_STATUS.APPROVED
+      ? existingVerifiedAt || now
+      : null;
+
+  await User.findByIdAndUpdate(
+    user._id,
+    {
+      $set: {
+        "verification.provider": VERIFICATION_PROVIDER.VERIFF,
+        "verification.sessionId": sessionId,
+        "verification.status": normalizedStatus,
+        "verification.verifiedAt": verifiedAtToSet,
+      },
+    },
+    { new: true }
+  )
+    .lean()
+    .exec();
 };
 

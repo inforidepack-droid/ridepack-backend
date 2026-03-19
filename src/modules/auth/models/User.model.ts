@@ -19,7 +19,9 @@ export interface IUser extends Document {
   verification?: {
     provider?: string;
     sessionId?: string;
+    verificationUrl?: string;
     status?: string;
+    createdAt?: Date;
     verifiedAt?: Date;
   };
   createdAt: Date;
@@ -86,10 +88,16 @@ const userSchema = new Schema<IUser>(
       sessionId: {
         type: String,
       },
+      verificationUrl: {
+        type: String,
+      },
       status: {
         type: String,
         enum: ["not_started", "pending", "approved", "declined", "expired"],
         default: "not_started",
+      },
+      createdAt: {
+        type: Date,
       },
       verifiedAt: {
         type: Date,
