@@ -5,10 +5,12 @@ import { apiLimiter } from "@/middlewares/rateLimiter";
 import { errorHandler } from "@/middlewares/errorHandler";
 import routes from "@/routes/index";
 import { env } from "@/config/env.config";
+import morgan from "morgan";
 
 export const loadExpress = (): Express => {
   const app = express();
 
+ app.use(morgan("dev"))
   app.use(helmet());
   app.use(
     cors({

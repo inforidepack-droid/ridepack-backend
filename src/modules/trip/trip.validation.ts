@@ -1,4 +1,4 @@
-import { body, query } from "express-validator";
+import { body, query, param } from "express-validator";
 
 const locationValidator = (prefix: string) => [
   body(`${prefix}.lat`).isFloat().withMessage(`${prefix}.lat is required`),
@@ -44,4 +44,8 @@ export const priceBreakdownValidation = () => [
   query("parcelLength").notEmpty().isFloat({ min: 0 }).withMessage("parcelLength required"),
   query("parcelWidth").notEmpty().isFloat({ min: 0 }).withMessage("parcelWidth required"),
   query("parcelHeight").notEmpty().isFloat({ min: 0 }).withMessage("parcelHeight required"),
+];
+
+export const cancelTripValidation = () => [
+  param("tripId").notEmpty().withMessage("tripId required").isString(),
 ];

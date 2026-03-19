@@ -124,3 +124,21 @@ export const findPublishedByRiderId = (riderId: string): Promise<TripLean[]> =>
     .sort({ publishedAt: -1, createdAt: -1 })
     .lean()
     .exec() as Promise<TripLean[]>;
+
+export const atomicCancel = (tripId: string, riderId: string): Promise<TripLean | null> =>
+  Trip.findOneAndUpdate(
+    {
+      _id: tripId,
+      riderId,
+      status: { $in: [TRIP_STATUS.DRAFT, TRIP_STATUS.PUBLISHED] },
+    },
+    {
+      $set: {
+        status: TRIP_STATUS.CANCELLED,
+        isLocked: false,
+      },
+    },
+    { new: true }
+  )
+    .lean()
+    .exec() as Promise<TripLean | null>;
