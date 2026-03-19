@@ -44,7 +44,7 @@ export type SearchFilters = {
   parcelHeight: number;
 };
 
-const LOCATION_DELTA = 0.5;
+const LOCATION_DELTA = 0.03;
 
 export const searchPublished = async (
   filters: SearchFilters
