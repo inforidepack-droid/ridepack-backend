@@ -13,6 +13,7 @@ import paymentsRoutes from "@/modules/payments/payment.routes";
 import stripeRoutes, { stripeWebhookRouter } from "@/modules/stripe/stripe.routes";
 import locationRoutes from "@/modules/tracking/location.routes";
 import trackingRoutes from "@/modules/tracking/tracking.routes";
+import vehicleRoutes from "@/modules/vehicle/vehicle.routes";
 
 const router = Router();
 
@@ -30,5 +31,6 @@ router.use("/location", locationRoutes);
 router.use("/parcels", trackingRoutes);
 router.use("/webhooks", veriffWebhookRouter);
 router.use("/webhooks", stripeWebhookRouter);
+router.use("/vehicles", vehicleRoutes);
 
 export default router;
