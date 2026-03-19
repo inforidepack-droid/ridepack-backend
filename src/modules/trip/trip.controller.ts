@@ -7,6 +7,7 @@ import {
   createDraftTrip,
   listMyPublishedTrips,
 } from "@/modules/trip/trip.service";
+import { cancelTrip } from "@/modules/trip/trip.cancel.service";
 import { searchTrips, getTripDetails, getPriceBreakdown } from "@/modules/trip/trip.search.service";
 import { AuthRequest } from "@/middlewares/auth";
 
@@ -62,5 +63,15 @@ export const listMyPublishedTripsController = asyncHandler(
     if (!req.user) throw createError("Unauthorized", 401);
     const trips = await listMyPublishedTrips(req.user.userId);
     sendSuccess(res, { data: { trips } });
+  }
+);
+
+export const cancelTripController = asyncHandler(
+  async (req: AuthRequest, res: Response): Promise<void> => {
+    if (!req.user) throw createError("Unauthorized", 401);
+    const tripId = req.params.tripId as string;
+    const riderId = req.user.userId;
+    const trip = await cancelTrip(riderId, tripId);
+    sendSuccess(res, { data: { trip }, message: "Trip cancelled successfully" });
   }
 );

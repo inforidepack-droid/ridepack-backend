@@ -143,3 +143,21 @@ export const atomicConfirmAndDeductCapacity = async (
     throw new Error("Booking not found or already confirmed");
   }
 }
+
+export const cancelPendingBookingsForTrip = async (tripId: string): Promise<number> => {
+  const pendingStatuses = [BOOKING_STATUS.PENDING_RIDER_ACCEPT, BOOKING_STATUS.PENDING_PAYMENT];
+  const result = await Booking.updateMany(
+    {
+      tripId: new mongoose.Types.ObjectId(tripId),
+      status: { $in: pendingStatuses },
+    },
+    {
+      $set: { status: BOOKING_STATUS.CANCELLED },
+    }
+  ).exec();
+
+  // Mongoose returns different shapes depending on version
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const modifiedCount = (result as any).modifiedCount as number | undefined;
+  return typeof modifiedCount === "number" ? modifiedCount : 0;
+};

@@ -6,9 +6,14 @@ import {
   getTripDetailsController,
   getPriceBreakdownController,
   listMyPublishedTripsController,
+  cancelTripController,
 } from "@/modules/trip/trip.controller";
 import { createDraftValidation } from "@/modules/trip/trip.validation";
-import { searchTripsValidation, priceBreakdownValidation } from "@/modules/trip/trip.validation";
+import {
+  searchTripsValidation,
+  priceBreakdownValidation,
+  cancelTripValidation,
+} from "@/modules/trip/trip.validation";
 import { validate } from "@/middlewares/validation";
 import { authenticate } from "@/middlewares/auth";
 
@@ -21,5 +26,6 @@ router.get("/:tripId", getTripDetailsController);
 
 router.post("/", authenticate, createDraftValidation(), validate, createDraftTripController);
 router.patch("/:tripId/publish", authenticate, publishTripController);
+router.patch("/:tripId/cancel", authenticate, cancelTripValidation(), validate, cancelTripController);
 
 export default router;
