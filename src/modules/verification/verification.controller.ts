@@ -37,3 +37,28 @@ export const veriffWebhookController = asyncHandler(
   }
 );
 
+/**
+ * Browser redirect after Veriff session (GET). Veriff sends server webhooks via POST only.
+ */
+export const veriffCallbackReturnController = asyncHandler(
+  async (_req: Request, res: Response): Promise<void> => {
+    const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Verification</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 28rem; margin: 3rem auto; padding: 0 1rem; line-height: 1.5; }
+    h1 { font-size: 1.25rem; }
+  </style>
+</head>
+<body>
+  <h1>Verification finished</h1>
+  <p>You can close this page and return to the RidePack app. Your status updates in a few moments.</p>
+</body>
+</html>`;
+    res.status(200).type("html").send(html);
+  }
+);
+

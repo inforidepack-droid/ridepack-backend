@@ -1,4 +1,3 @@
-import crypto from "crypto";
 import axios from "axios";
 import User from "@/modules/auth/models/User.model";
 import { createError } from "@/utils/appError";
@@ -15,6 +14,11 @@ import type {
   VeriffSessionResponse,
   VeriffDecisionPayload,
 } from "@/modules/verification/verification.types";
+import {
+  computeHmacSignature,
+  extractSessionIdAndDecision,
+  timingSafeEquals,
+} from "@/modules/verification/veriff-webhook.utils";
 
 const resolveVerificationStatus = (status?: string): VerificationStatus => {
   const normalized = (status || "").toLowerCase();
@@ -24,16 +28,6 @@ const resolveVerificationStatus = (status?: string): VerificationStatus => {
     return VERIFICATION_STATUS.EXPIRED;
   }
   return VERIFICATION_STATUS.PENDING;
-};
-
-const computeHmacSignature = (payload: Buffer, secret: string): string =>
-  crypto.createHmac("sha256", secret).update(payload).digest("hex");
-
-const timingSafeEquals = (a: string, b: string): boolean => {
-  const aBuf = Buffer.from(a, "utf8");
-  const bBuf = Buffer.from(b, "utf8");
-  if (aBuf.length !== bBuf.length) return false;
-  return crypto.timingSafeEqual(aBuf, bBuf);
 };
 
 const VERIFF_SESSION_TTL_MS = 24 * 60 * 60 * 1000;
@@ -195,9 +189,7 @@ export const handleVeriffWebhook = async (
     throw createError("Invalid webhook signature", HTTP_STATUS.FORBIDDEN);
   }
 
-  const verification = body.verification;
-  const sessionId = verification?.id || body.id;
-  const decision = verification?.status || body.status;
+  const { sessionId, decision } = extractSessionIdAndDecision(body);
 
   if (!sessionId || !decision) {
     // Unknown payload shape – acknowledge without side effects

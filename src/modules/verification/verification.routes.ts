@@ -5,6 +5,7 @@ import {
   startVerificationController,
   getVerificationStatusController,
   veriffWebhookController,
+  veriffCallbackReturnController,
 } from "@/modules/verification/verification.controller";
 import {
   startVerificationValidation,
@@ -24,6 +25,7 @@ verificationRouter.post(
 
 verificationRouter.get("/status", authenticate, getVerificationStatusController);
 
+webhookRouter.get("/veriff", veriffCallbackReturnController);
 webhookRouter.post("/veriff", veriffWebhookValidation(), validate, veriffWebhookController);
 
 export default verificationRouter;
