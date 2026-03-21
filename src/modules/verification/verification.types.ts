@@ -24,5 +24,14 @@ export interface VeriffDecisionPayload {
   };
   id?: string;
   status?: string;
+  /** Veriff fullauto / some event webhooks */
+  sessionId?: string;
+  eventType?: string;
+  data?: {
+    verification?: {
+      decision?: string;
+      status?: string;
+    };
+  };
 }
 
