@@ -2,7 +2,6 @@ import { body } from "express-validator";
 import { VEHICLE_TYPE } from "@/modules/rider/rider.constants";
 
 export const createRiderValidation = () => [
-  body("governmentIdImage").notEmpty().trim().withMessage("governmentIdImage is required"),
   body("vehicleType")
     .notEmpty()
     .isIn(Object.values(VEHICLE_TYPE))
@@ -23,7 +22,6 @@ export const createRiderValidation = () => [
 ];
 
 export const updateRiderValidation = () => [
-  body("governmentIdImage").optional().notEmpty().trim(),
   body("vehicleType").optional().isIn(Object.values(VEHICLE_TYPE)),
   body("vehicleDetails").optional().isObject(),
   body("vehicleDetails.model").optional().isString().trim(),

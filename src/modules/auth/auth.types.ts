@@ -23,9 +23,18 @@ export interface AuthUserResponse {
   id: string;
   email: string;
   name: string;
+  firstName: string;
+  lastName: string;
+  gender: string;
+  profileImage: string;
   phoneNumber: string;
   countryCode: string;
   isPhoneVerified: boolean;
+  isEmailVerified: boolean;
+  /** True when Veriff KYC approved (synced with webhook); use with idVerificationStatus */
+  isVerified: boolean;
+  /** Veriff KYC: not_started | pending | approved | declined | expired */
+  idVerificationStatus: string;
   role: string;
   createdAt: Date;
   updatedAt: Date;

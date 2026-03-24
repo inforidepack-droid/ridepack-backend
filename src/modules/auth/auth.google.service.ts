@@ -29,6 +29,7 @@ export const googleLogin = async (idToken: string): Promise<GoogleAuthResponse> 
         profileImage: picture,
         role: "sender",
         authProvider: "google",
+        isEmailVerified: true,
       });
     } catch (err: unknown) {
       const isDuplicate = err && typeof err === "object" && "code" in err && (err as { code: number }).code === 11000;
@@ -41,13 +42,14 @@ export const googleLogin = async (idToken: string): Promise<GoogleAuthResponse> 
     if (user.isBlocked) {
       throw createError("User account blocked", 403);
     }
-    const updates: { googleId?: string; profileImage?: string } = {};
+    const updates: { googleId?: string; profileImage?: string; isEmailVerified?: boolean } = {};
     if (sub && !user.googleId) {
       updates.googleId = sub;
     }
     if (picture) {
       updates.profileImage = picture;
     }
+    updates.isEmailVerified = true;
     if (Object.keys(updates).length > 0) {
       try {
         const updated = await authRepository.updateUserById(user._id.toString(), updates);

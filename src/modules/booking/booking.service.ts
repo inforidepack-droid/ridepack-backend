@@ -17,7 +17,6 @@ export type CreateBookingBody = {
   senderDetails: { name: string; phone: string };
   receiverDetails: { name: string; phone: string };
   packageImages: string[];
-  governmentIdImage: string;
   agreedPrice: number;
   illegalItemsDeclaration: boolean;
 };
@@ -35,16 +34,13 @@ export const createBooking = async (
   senderId: string,
   body: CreateBookingBody
 ): Promise<bookingRepository.BookingLean> => {
-  const { tripId, parcel, senderDetails, receiverDetails, packageImages, governmentIdImage, agreedPrice } = body;
+  const { tripId, parcel, senderDetails, receiverDetails, packageImages, agreedPrice } = body;
 
   if (!packageImages || packageImages.length < MIN_PACKAGE_IMAGES) {
     throw createError(
       `At least ${MIN_PACKAGE_IMAGES} package images are required`,
       HTTP_STATUS.BAD_REQUEST
     );
-  }
-  if (!governmentIdImage || governmentIdImage.trim() === "") {
-    throw createError("Government ID image is required", HTTP_STATUS.BAD_REQUEST);
   }
   if (!senderDetails?.name?.trim() || !senderDetails?.phone?.trim()) {
     throw createError("Sender name and phone are required", HTTP_STATUS.BAD_REQUEST);
@@ -122,7 +118,6 @@ export const createBooking = async (
     senderDetails,
     receiverDetails,
     packageImages,
-    governmentIdImage,
     agreedPrice,
     illegalItemsDeclaration: body.illegalItemsDeclaration,
   });
@@ -195,9 +190,6 @@ export const payBooking = async (
 
   if (booking.agreedPrice <= 0) {
     throw createError("Invalid booking price", HTTP_STATUS.BAD_REQUEST);
-  }
-  if (!booking.governmentIdImage?.trim()) {
-    throw createError("Government ID is missing", HTTP_STATUS.BAD_REQUEST);
   }
   if (!booking.packageImages || booking.packageImages.length < MIN_PACKAGE_IMAGES) {
     throw createError(`At least ${MIN_PACKAGE_IMAGES} package images required`, HTTP_STATUS.BAD_REQUEST);

@@ -27,7 +27,6 @@ export const createBookingValidation = () => [
     .isArray({ min: MIN_PACKAGE_IMAGES })
     .withMessage(`At least ${MIN_PACKAGE_IMAGES} package images required`),
   body("packageImages.*").isString().notEmpty(),
-  body("governmentIdImage").notEmpty().withMessage("governmentIdImage required"),
   body("agreedPrice").isFloat({ min: 0.01 }).withMessage("agreedPrice required and > 0"),
   body("illegalItemsDeclaration")
     .isBoolean()

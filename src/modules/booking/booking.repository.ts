@@ -15,7 +15,6 @@ export type CreateBookingInput = {
   senderDetails: IBooking["senderDetails"];
   receiverDetails: IBooking["receiverDetails"];
   packageImages: string[];
-  governmentIdImage: string;
   agreedPrice: number;
   illegalItemsDeclaration: boolean;
 };

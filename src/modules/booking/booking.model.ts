@@ -9,7 +9,6 @@ export interface IBooking extends Document {
   senderDetails: IContactDetails;
   receiverDetails: IContactDetails;
   packageImages: string[];
-  governmentIdImage: string;
   agreedPrice: number;
   illegalItemsDeclaration: boolean;
   status: string;
@@ -46,7 +45,6 @@ const bookingSchema = new Schema<IBooking>(
     senderDetails: { type: contactSchema, required: true },
     receiverDetails: { type: contactSchema, required: true },
     packageImages: [{ type: String, required: true }],
-    governmentIdImage: { type: String, required: true },
     agreedPrice: { type: Number, required: true },
     illegalItemsDeclaration: { type: Boolean, required: true },
     status: {

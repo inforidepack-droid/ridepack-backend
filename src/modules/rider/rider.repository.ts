@@ -21,7 +21,6 @@ export const findByIdWithUser = (id: string): Promise<(RiderLean & { userId: { _
 
 export const create = (data: {
   userId: string;
-  governmentIdImage: string;
   vehicleType: string;
   vehicleDetails?: { model?: string; color?: string; plateNumber?: string };
 }): Promise<RiderLean> =>
@@ -33,7 +32,6 @@ export const create = (data: {
 export const updateById = (
   id: string,
   data: Partial<{
-    governmentIdImage: string;
     vehicleType: string;
     vehicleDetails: { model?: string; color?: string; plateNumber?: string };
   }>

@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "a2f2c8f4-7f4f-4d1a-ae7e-9f5d3a2b0f0c",
     "name": "RidePack API - Vehicle (Car Details)",
-    "description": "Postman collection for RidePack vehicle endpoints.",
+    "description": "Minimal vehicle-only collection. For the full API (auth, user profile, Veriff KYC, bookings, webhooks), import **`postman/RidePack.postman_collection.json`**.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
