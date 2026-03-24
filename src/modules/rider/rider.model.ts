@@ -4,7 +4,6 @@ import { VEHICLE_TYPE } from "@/modules/rider/rider.constants";
 
 export interface IRider extends Document {
   userId: mongoose.Types.ObjectId;
-  governmentIdImage: string;
   isKycVerified: boolean;
   vehicleType: string;
   vehicleDetails?: IVehicleDetails;
@@ -32,7 +31,6 @@ const riderSchema = new Schema<IRider>(
       required: true,
       unique: true,
     },
-    governmentIdImage: { type: String, required: true, trim: true },
     isKycVerified: { type: Boolean, default: false },
     vehicleType: {
       type: String,

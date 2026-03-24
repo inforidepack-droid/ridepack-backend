@@ -5,11 +5,15 @@ export interface IUser extends Document {
   email?: string;
   password?: string;
   name?: string;
+  firstName?: string;
+  lastName?: string;
+  gender?: "male" | "female" | "other";
   phoneNumber?: string;
   countryCode?: string;
   googleId?: string;
   profileImage?: string;
   isPhoneVerified: boolean;
+  isEmailVerified: boolean;
   isBlocked: boolean;
   isVerified: boolean;
   role: string;
@@ -48,6 +52,21 @@ const userSchema = new Schema<IUser>(
       required: false,
       trim: true,
     },
+    firstName: {
+      type: String,
+      required: false,
+      trim: true,
+    },
+    lastName: {
+      type: String,
+      required: false,
+      trim: true,
+    },
+    gender: {
+      type: String,
+      enum: ["male", "female", "other"],
+      required: false,
+    },
     googleId: {
       type: String,
       required: false,
@@ -69,6 +88,10 @@ const userSchema = new Schema<IUser>(
       trim: true,
     },
     isPhoneVerified: {
+      type: Boolean,
+      default: false,
+    },
+    isEmailVerified: {
       type: Boolean,
       default: false,
     },

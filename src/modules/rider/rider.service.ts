@@ -8,7 +8,6 @@ import { VEHICLE_TYPE } from "@/modules/rider/rider.constants";
 const isValidObjectId = (id: string): boolean => mongoose.Types.ObjectId.isValid(id) && new mongoose.Types.ObjectId(id).toString() === id;
 
 export type CreateRiderInput = {
-  governmentIdImage: string;
   vehicleType: string;
   vehicleDetails?: { model?: string; color?: string; plateNumber?: string };
 };
@@ -21,9 +20,6 @@ export const createRider = async (
   if (existing) {
     throw createError("Rider profile already exists for this user", HTTP_STATUS.BAD_REQUEST);
   }
-  if (!data.governmentIdImage?.trim()) {
-    throw createError("governmentIdImage is required", HTTP_STATUS.BAD_REQUEST);
-  }
   if (data.vehicleType === VEHICLE_TYPE.OWN_VEHICLE) {
     const v = data.vehicleDetails;
     if (!v?.model?.trim() || !v?.color?.trim() || !v?.plateNumber?.trim()) {
@@ -35,7 +31,6 @@ export const createRider = async (
   }
   return riderRepository.create({
     userId,
-    governmentIdImage: data.governmentIdImage.trim(),
     vehicleType: data.vehicleType,
     vehicleDetails: data.vehicleDetails,
   });
@@ -54,7 +49,6 @@ export const getRiderByIdForResponse = async (id: string) => {
   return {
     _id: rider._id,
     userId,
-    governmentIdImage: rider.governmentIdImage,
     isKycVerified: rider.isKycVerified,
     vehicleType: rider.vehicleType,
     vehicleDetails: rider.vehicleDetails,
@@ -68,7 +62,6 @@ export const getRiderByIdForResponse = async (id: string) => {
 };
 
 export type UpdateRiderInput = {
-  governmentIdImage?: string;
   vehicleType?: string;
   vehicleDetails?: { model?: string; color?: string; plateNumber?: string };
 };
@@ -93,9 +86,6 @@ export const updateRider = async (
   if ((user as { isBlocked?: boolean })?.isBlocked) {
     throw createError("Blocked rider cannot update profile", HTTP_STATUS.FORBIDDEN);
   }
-  if (rider.isKycVerified && data.governmentIdImage !== undefined) {
-    throw createError("governmentIdImage cannot be changed after KYC verification", HTTP_STATUS.BAD_REQUEST);
-  }
   if (data.vehicleType === VEHICLE_TYPE.OWN_VEHICLE && data.vehicleDetails) {
     const v = data.vehicleDetails;
     if (!v.model?.trim() || !v.color?.trim() || !v.plateNumber?.trim()) {
@@ -103,7 +93,6 @@ export const updateRider = async (
     }
   }
   const updatePayload: UpdateRiderInput = {};
-  if (data.governmentIdImage !== undefined) updatePayload.governmentIdImage = data.governmentIdImage;
   if (data.vehicleType !== undefined) updatePayload.vehicleType = data.vehicleType;
   if (data.vehicleDetails !== undefined) updatePayload.vehicleDetails = data.vehicleDetails;
   const updated = await riderRepository.updateById(id, updatePayload);

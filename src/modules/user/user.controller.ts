@@ -4,6 +4,7 @@ import { sendSuccess } from "@/utils/responseFormatter";
 import { createError } from "@/utils/appError";
 import { toAuthUserResponse } from "@/modules/auth/auth.utils";
 import * as userService from "@/modules/user/user.service";
+import type { UpdateProfileBody } from "@/modules/user/user.types";
 import { AuthRequest } from "@/middlewares/auth";
 
 export const getProfileController = asyncHandler(async (req: AuthRequest, res: Response): Promise<void> => {
@@ -14,6 +15,6 @@ export const getProfileController = asyncHandler(async (req: AuthRequest, res: R
 
 export const updateProfileController = asyncHandler(async (req: AuthRequest, res: Response): Promise<void> => {
   if (!req.user) throw createError("Unauthorized", 401);
-  const user = await userService.updateProfile(req.user.userId, req.body);
+  const user = await userService.updateProfile(req.user.userId, req.body as UpdateProfileBody);
   sendSuccess(res, { data: toAuthUserResponse(user) });
 });

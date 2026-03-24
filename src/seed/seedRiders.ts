@@ -10,7 +10,6 @@ import Rider from "@/modules/rider/rider.model";
 
 const SEED_EMAIL_DOMAIN = "@ridepack-seed.local";
 const SEED_PASSWORD = "Password@123";
-const GOVERNMENT_ID_BASE = "https://example.com/id/";
 const VEHICLE_MODELS = ["Toyota Camry", "Honda Accord", "Ford Focus", "Chevrolet Malibu", "Nissan Altima"];
 const COLORS = ["Black", "White", "Silver", "Blue", "Red"];
 
@@ -74,7 +73,6 @@ const run = async (): Promise<void> => {
 
       await Rider.create({
         userId: user._id,
-        governmentIdImage: `${GOVERNMENT_ID_BASE}rider-${i}.jpg`,
         isKycVerified: false,
         vehicleType: "own_vehicle",
         vehicleDetails: {

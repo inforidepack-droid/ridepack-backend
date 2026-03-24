@@ -228,6 +228,8 @@ export const handleVeriffWebhook = async (
       ? existingVerifiedAt || now
       : null;
 
+  const isVerified = normalizedStatus === VERIFICATION_STATUS.APPROVED;
+
   await User.findByIdAndUpdate(
     user._id,
     {
@@ -236,6 +238,7 @@ export const handleVeriffWebhook = async (
         "verification.sessionId": sessionId,
         "verification.status": normalizedStatus,
         "verification.verifiedAt": verifiedAtToSet,
+        isVerified,
       },
     },
     { new: true }
