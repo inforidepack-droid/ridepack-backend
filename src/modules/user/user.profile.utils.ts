@@ -17,6 +17,11 @@ export const buildIdentityPatch = (current: CurrentProfile, data: UpdateProfileB
     patch.profileImage = trimmed || undefined;
   }
 
+  if (data.address !== undefined) {
+    const trimmed = data.address.trim();
+    patch.address = trimmed || undefined;
+  }
+
   if (data.gender !== undefined) {
     patch.gender = data.gender;
   }

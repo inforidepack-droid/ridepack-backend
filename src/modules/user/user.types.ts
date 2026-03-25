@@ -12,4 +12,6 @@ export type UpdateProfileBody = {
   email?: string;
   phoneNumber?: string;
   countryCode?: string;
+  /** Free-form single-line or multi-line address text. */
+  address?: string;
 };
