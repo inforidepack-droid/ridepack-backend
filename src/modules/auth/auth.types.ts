@@ -27,6 +27,8 @@ export interface AuthUserResponse {
   lastName: string;
   gender: string;
   profileImage: string;
+  /** Single free-form address string. */
+  address: string;
   phoneNumber: string;
   countryCode: string;
   isPhoneVerified: boolean;

@@ -12,6 +12,8 @@ export interface IUser extends Document {
   countryCode?: string;
   googleId?: string;
   profileImage?: string;
+  /** Free-form address (single field). */
+  address?: string;
   isPhoneVerified: boolean;
   isEmailVerified: boolean;
   isBlocked: boolean;
@@ -77,6 +79,7 @@ const userSchema = new Schema<IUser>(
       required: false,
       trim: true,
     },
+    address: { type: String, required: false, trim: true },
     phoneNumber: {
       type: String,
       required: false,

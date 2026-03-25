@@ -46,4 +46,10 @@ export const updateProfileValidation = () => [
   body("email").optional().isEmail().normalizeEmail().withMessage("Valid email required"),
   body("phoneNumber").optional().isString().trim(),
   body("countryCode").optional().isString().trim(),
+  body("address")
+    .optional()
+    .isString()
+    .trim()
+    .isLength({ max: USER_CONSTANTS.ADDRESS_MAX })
+    .withMessage(`address max ${USER_CONSTANTS.ADDRESS_MAX} characters`),
 ];
