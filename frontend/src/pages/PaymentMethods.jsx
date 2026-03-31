@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import api, { getApiErrorMessage } from "../api/api.js";
+import api from "../api/api.js";
 import CardForm from "../components/CardForm.jsx";
 
 const PaymentMethods = () => {
@@ -18,10 +18,10 @@ const PaymentMethods = () => {
         response?.data?.data?.paymentMethods || response?.data?.paymentMethods || [];
       setCards(paymentMethods);
     } catch (error) {
-      setErrorMessage(
-        getApiErrorMessage(error) ||
-          "Unable to load payment methods. Check your token and backend."
-      );
+      const message =
+        error?.response?.data?.message ||
+        "Unable to load payment methods. Check your token and backend.";
+      setErrorMessage(message);
     } finally {
       setIsLoading(false);
     }
@@ -57,10 +57,10 @@ const PaymentMethods = () => {
         previousCards.filter((card) => card._id !== cardId)
       );
     } catch (error) {
-      setErrorMessage(
-        getApiErrorMessage(error) ||
-          "Unable to remove card. It may be used for an active booking."
-      );
+      const message =
+        error?.response?.data?.message ||
+        "Unable to remove card. It may be used for an active booking.";
+      setErrorMessage(message);
     }
   };
 
