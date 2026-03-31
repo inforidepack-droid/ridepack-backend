@@ -1,7 +1,6 @@
 /**
  * Central env config. Read-only; do not mutate process.env here.
  */
-console.log(process.env.NODE_ENV,"dsdsdd");
 export const env = {
   NODE_ENV: process.env.NODE_ENV || "development",
   PORT: parseInt(process.env.PORT || "3000", 10),
@@ -28,8 +27,11 @@ export const env = {
   VERIFF_CALLBACK_URL: process.env.VERIFF_CALLBACK_URL ?? "",
   STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY ?? "",
   STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET ?? "",
+  /** ISO 4217 lowercase, e.g. usd — must match PaymentIntent currency */
+  STRIPE_CURRENCY: (process.env.STRIPE_CURRENCY ?? "usd").toLowerCase(),
   GOOGLE_MAPS_API_KEY: process.env.GOOGLE_MAPS_API_KEY ?? "",
   GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID ?? "",
+  ENABLE_SOCKET: (process.env.ENABLE_SOCKET || "false").toLowerCase() === "true",
 } as const;
 
 export const isTwilioConfigured = (): boolean =>

@@ -38,6 +38,11 @@ export const acceptBookingValidation = () => [
   param("id").notEmpty().withMessage("Booking id is required"),
 ];
 
+export const createBookingPaymentIntentValidation = () => [
+  param("id").notEmpty().withMessage("Booking id is required"),
+  body("paymentMethodId").optional().isString().trim().notEmpty(),
+];
+
 export const payBookingValidation = () => [
   body("paymentSignature").optional().isString(),
   body("paymentIntentId").optional().isString(),

@@ -1,16 +1,29 @@
 import { Server as HttpServer } from "http";
 import { Server as SocketServer, Socket } from "socket.io";
+import { env } from "@/config/env.config";
+import { getAllowedOrigins } from "@/config/cors.utils";
 import { logger } from "@/config/logger";
 import { verifyToken } from "@/libs/jwt";
+import { registerChatSocketHandlers } from "@/modules/chat/chat.socket";
 
 export interface AuthenticatedSocket extends Socket {
   userId?: string;
 }
 
-export const initializeSocket = (httpServer: HttpServer): SocketServer => {
+let socketServer: SocketServer | null = null;
+
+export const getSocketServer = (): SocketServer | null => socketServer;
+
+export const initializeSocket = (httpServer: HttpServer): SocketServer | null => {
+  if (!env.ENABLE_SOCKET) {
+    logger.info("Socket disabled");
+    socketServer = null;
+    return null;
+  }
+
   const io = new SocketServer(httpServer, {
     cors: {
-      origin: process.env.CORS_ORIGIN || "http://localhost:3000",
+      origin: getAllowedOrigins(),
       methods: ["GET", "POST"],
       credentials: true,
     },
@@ -36,6 +49,8 @@ export const initializeSocket = (httpServer: HttpServer): SocketServer => {
   io.on("connection", (socket: AuthenticatedSocket) => {
     logger.info(`Socket connected: ${socket.id} (User: ${socket.userId})`);
 
+    registerChatSocketHandlers(socket);
+
     socket.on("disconnect", () => {
       logger.info(`Socket disconnected: ${socket.id}`);
     });
@@ -45,5 +60,6 @@ export const initializeSocket = (httpServer: HttpServer): SocketServer => {
     });
   });
 
+  socketServer = io;
   return io;
 };

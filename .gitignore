@@ -47,3 +47,4 @@ coverage/
 .cursorrules
 postman/
 .env.example
+frontend/

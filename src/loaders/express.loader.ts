@@ -4,7 +4,7 @@ import helmet from "helmet";
 import { apiLimiter } from "@/middlewares/rateLimiter";
 import { errorHandler } from "@/middlewares/errorHandler";
 import routes from "@/routes/index";
-import { env } from "@/config/env.config";
+import { getAllowedOrigins } from "@/config/cors.utils";
 import morgan from "morgan";
 
 export const loadExpress = (): Express => {
@@ -14,7 +14,14 @@ export const loadExpress = (): Express => {
   app.use(helmet());
   app.use(
     cors({
-      origin: env.CORS_ORIGIN,
+      origin: (origin, callback) => {
+        const allowed = getAllowedOrigins();
+        if (!origin || allowed.includes(origin)) {
+          callback(null, true);
+        } else {
+          callback(new Error(`Not allowed by CORS: ${origin}`));
+        }
+      },
       credentials: true,
     })
   );

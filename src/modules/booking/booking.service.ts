@@ -10,6 +10,8 @@ import Trip from "@/modules/trip/trip.model";
 import User from "@/modules/auth/models/User.model";
 import Transaction from "@/modules/booking/transaction.model";
 import { ensureUserVerificationApprovedForBooking } from "@/modules/verification/verification.service";
+import { validateBookingReadyForPayment } from "@/modules/booking/booking.payment.service";
+import { assertPaymentIntentMatchesBooking } from "@/modules/booking/booking.stripe.utils";
 
 export type CreateBookingBody = {
   tripId: string;
@@ -174,35 +176,16 @@ export const payBooking = async (
     throw createError("Payment signature or intent ID is required", HTTP_STATUS.BAD_REQUEST);
   }
 
-  const booking = await bookingRepository.findByIdWithSender(bookingId, senderId);
-  if (!booking) {
-    throw createError("Booking not found", HTTP_STATUS.NOT_FOUND);
-  }
-  if (booking.status !== BOOKING_STATUS.PENDING_PAYMENT) {
-    if (booking.status === BOOKING_STATUS.CONFIRMED) {
-      throw createError("Booking already confirmed (double payment)", HTTP_STATUS.BAD_REQUEST);
-    }
-    throw createError(
-      `Booking cannot be paid. Current status: ${booking.status}`,
-      HTTP_STATUS.BAD_REQUEST
-    );
-  }
+  const { booking } = await validateBookingReadyForPayment(bookingId, senderId);
 
-  if (booking.agreedPrice <= 0) {
-    throw createError("Invalid booking price", HTTP_STATUS.BAD_REQUEST);
-  }
-  if (!booking.packageImages || booking.packageImages.length < MIN_PACKAGE_IMAGES) {
-    throw createError(`At least ${MIN_PACKAGE_IMAGES} package images required`, HTTP_STATUS.BAD_REQUEST);
-  }
-
-  const trip = await Trip.findById(booking.tripId).exec();
-  if (!trip || trip.status !== TRIP_STATUS.PUBLISHED) {
-    throw createError("Trip no longer available or cancelled", HTTP_STATUS.BAD_REQUEST);
-  }
-  const rem = trip.remainingCapacity;
-  if (!rem || rem.maxWeight < booking.parcel.weight) {
-    throw createError("Insufficient remaining capacity", HTTP_STATUS.BAD_REQUEST);
-  }
+  const sender = await User.findById(senderId).select("stripeCustomerId").lean().exec();
+  await assertPaymentIntentMatchesBooking({
+    paymentIntentId: signature.trim(),
+    bookingId,
+    senderId,
+    agreedPriceDollars: booking.agreedPrice,
+    stripeCustomerId: sender ? (sender as { stripeCustomerId?: string }).stripeCustomerId : null,
+  });
 
   const session = await mongoose.startSession();
   session.startTransaction();
