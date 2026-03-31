@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import { getStripeClient } from "@/services/stripe/stripe.client";
 import { createError } from "@/utils/appError";
+import { isMarketplaceParticipantRole } from "@/constants/marketplace.roles";
 import User from "@/modules/auth/models/User.model";
 import Booking from "@/modules/booking/booking.model";
 import { BOOKING_STATUS } from "@/modules/booking/booking.constants";
@@ -21,9 +22,9 @@ const findUserOrThrow = async (userId: string) => {
   return user;
 };
 
-const ensureSenderRole = (role: string | undefined) => {
-  if (role !== "sender") {
-    throw createError("Only senders can manage payment methods", 403);
+const ensureCanManagePaymentMethods = (role: string | undefined) => {
+  if (!isMarketplaceParticipantRole(role)) {
+    throw createError("Only marketplace users can manage payment methods", 403);
   }
 };
 
@@ -51,7 +52,7 @@ export const createSetupIntentForUser = async (
 ): Promise<{ clientSecret: string }> => {
   const user = await findUserOrThrow(userId);
 
-  ensureSenderRole(user.role);
+  ensureCanManagePaymentMethods(user.role);
 
   const customerId = await ensureStripeCustomer(user);
 
@@ -83,7 +84,7 @@ export const savePaymentMethodForUser = async (
 
   const user = await findUserOrThrow(userId);
 
-  ensureSenderRole(user.role);
+  ensureCanManagePaymentMethods(user.role);
 
   const customerId = await ensureStripeCustomer(user);
 
@@ -130,13 +131,22 @@ export const listPaymentMethodsForUser = async (
 ): Promise<IPaymentMethod[]> => {
   const user = await findUserOrThrow(userId);
 
-  ensureSenderRole(user.role);
+  ensureCanManagePaymentMethods(user.role);
 
   const paymentMethods = await PaymentMethod.find({ userId: user._id }).sort({
     createdAt: -1,
   });
 
   return paymentMethods;
+};
+
+/** Ensures Stripe Customer exists; used by booking PaymentIntent flow. */
+export const getOrCreateStripeCustomerIdForUser = async (
+  userId: string
+): Promise<string> => {
+  const user = await findUserOrThrow(userId);
+  ensureCanManagePaymentMethods(user.role);
+  return ensureStripeCustomer(user);
 };
 
 export const deletePaymentMethodForUser = async (
@@ -149,7 +159,7 @@ export const deletePaymentMethodForUser = async (
 
   const user = await findUserOrThrow(userId);
 
-  ensureSenderRole(user.role);
+  ensureCanManagePaymentMethods(user.role);
 
   const paymentMethod = await PaymentMethod.findOne({
     _id: paymentMethodDbId,

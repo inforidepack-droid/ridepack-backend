@@ -8,6 +8,7 @@ import {
   payBooking,
   listMyBookings,
 } from "@/modules/booking/booking.service";
+import { createBookingPaymentIntent } from "@/modules/booking/booking.payment.service";
 import type {
   CreateBookingBody,
   PayBookingBody,
@@ -29,6 +30,20 @@ export const acceptBookingController = asyncHandler(
     const bookingId = req.params.id as string;
     const booking = await acceptBookingRequest(req.user.userId, bookingId);
     sendSuccess(res, { data: { booking }, message: "Booking request accepted" });
+  }
+);
+
+export const createBookingPaymentIntentController = asyncHandler(
+  async (req: AuthRequest, res: Response): Promise<void> => {
+    if (!req.user) throw createError("Unauthorized", 401);
+    const bookingId = req.params.id as string;
+    const { paymentMethodId } = req.body as { paymentMethodId?: string };
+    const result = await createBookingPaymentIntent(
+      bookingId,
+      req.user.userId,
+      paymentMethodId
+    );
+    sendSuccess(res, { data: result });
   }
 );
 

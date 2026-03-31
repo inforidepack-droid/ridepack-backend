@@ -1,7 +1,8 @@
 import mongoose from "mongoose";
 import { getStripeClient } from "@/services/stripe/stripe.client";
-import { env } from "@/config/env.config";
+import { getStripeOnboardingBaseUrl } from "@/config/cors.utils";
 import { createError } from "@/utils/appError";
+import { isMarketplaceParticipantRole } from "@/constants/marketplace.roles";
 import User from "@/modules/auth/models/User.model";
 
 const findUserOrThrow = async (userId: string) => {
@@ -18,9 +19,9 @@ const findUserOrThrow = async (userId: string) => {
   return user;
 };
 
-const ensureRiderRole = (role: string | undefined) => {
-  if (role !== "rider") {
-    throw createError("Only riders can connect Stripe accounts", 403);
+const ensureCanUseStripeConnect = (role: string | undefined) => {
+  if (!isMarketplaceParticipantRole(role)) {
+    throw createError("Only marketplace users can connect Stripe for payouts", 403);
   }
 };
 
@@ -62,11 +63,11 @@ export const createConnectOnboardingLink = async (
 ): Promise<{ url: string }> => {
   const user = await findUserOrThrow(userId);
 
-  ensureRiderRole(user.role);
+  ensureCanUseStripeConnect(user.role);
 
   const account = await getOrCreateConnectAccount(user);
 
-  const baseUrl = env.CORS_ORIGIN || "http://localhost:3000";
+  const baseUrl = getStripeOnboardingBaseUrl();
 
   try {
     const stripe = getStripeClient();
@@ -86,7 +87,7 @@ export const createConnectOnboardingLink = async (
 export const getStripeAccountStatus = async (userId: string) => {
   const user = await findUserOrThrow(userId);
 
-  ensureRiderRole(user.role);
+  ensureCanUseStripeConnect(user.role);
 
   if (!user.stripeAccountId) {
     return {
@@ -123,7 +124,7 @@ export const getStripeAccountStatus = async (userId: string) => {
 export const disconnectStripeAccount = async (userId: string): Promise<void> => {
   const user = await findUserOrThrow(userId);
 
-  ensureRiderRole(user.role);
+  ensureCanUseStripeConnect(user.role);
 
   if (!user.stripeAccountId) {
     return;

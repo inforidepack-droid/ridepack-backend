@@ -14,6 +14,8 @@ import "@/modules/booking/transaction.model";
 import "@/modules/rider/rider.model";
 import "@/modules/tracking/riderLocation.model";
 import "@/modules/vehicle/vehicle.model";
+import "@/modules/chat/conversation.model";
+import "@/modules/chat/message.model";
 
 const PORT = process.env.PORT || 3000;
 
