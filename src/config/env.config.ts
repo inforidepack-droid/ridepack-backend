@@ -17,7 +17,14 @@ export const env = {
   RATE_LIMIT_MAX_REQUESTS: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || "100", 10),
   TWILIO_ACCOUNT_SID: process.env.TWILIO_ACCOUNT_SID ?? "",
   TWILIO_AUTH_TOKEN: process.env.TWILIO_AUTH_TOKEN ?? "",
+  /** Legacy SMS “from” for non-OTP SMS helpers; OTP SMS uses TWILIO_SMS_NUMBER when re-enabled. */
   TWILIO_PHONE_NUMBER: process.env.TWILIO_PHONE_NUMBER ?? "",
+  /** Twilio WhatsApp sender, e.g. whatsapp:+14155238886 */
+  TWILIO_WHATSAPP_NUMBER: process.env.TWILIO_WHATSAPP_NUMBER ?? "",
+  /** SMS “from” when A2P is approved (OTP SMS path is commented until then). */
+  TWILIO_SMS_NUMBER: process.env.TWILIO_SMS_NUMBER ?? "",
+  /** Twilio Content template SID for OTP (variable "1" = code). */
+  TWILIO_OTP_CONTENT_SID: process.env.TWILIO_OTP_CONTENT_SID ?? "",
   AWS_REGION: process.env.AWS_REGION ?? "us-east-1",
   AWS_ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID ?? "",
   AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY ?? "",
@@ -34,8 +41,22 @@ export const env = {
   ENABLE_SOCKET: (process.env.ENABLE_SOCKET || "false").toLowerCase() === "true",
 } as const;
 
+/** SMS helper (`sendSms`) is “configured” when Twilio creds exist and a from-number is set (SMS or legacy phone). */
 export const isTwilioConfigured = (): boolean =>
-  Boolean(env.TWILIO_ACCOUNT_SID && env.TWILIO_AUTH_TOKEN && env.TWILIO_PHONE_NUMBER);
+  Boolean(
+    env.TWILIO_ACCOUNT_SID &&
+    env.TWILIO_AUTH_TOKEN &&
+    (env.TWILIO_SMS_NUMBER || env.TWILIO_PHONE_NUMBER)
+  );
+
+/** OTP is sent via WhatsApp; requires Content SID and WhatsApp-enabled sender. */
+export const isTwilioWhatsAppOtpConfigured = (): boolean =>
+  Boolean(
+    env.TWILIO_ACCOUNT_SID &&
+    env.TWILIO_AUTH_TOKEN &&
+    env.TWILIO_WHATSAPP_NUMBER &&
+    env.TWILIO_OTP_CONTENT_SID
+  );
 
 export const isS3Configured = (): boolean =>
   Boolean(env.AWS_ACCESS_KEY_ID && env.AWS_SECRET_ACCESS_KEY && env.S3_BUCKET);
