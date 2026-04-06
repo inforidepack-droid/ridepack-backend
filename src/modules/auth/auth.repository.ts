@@ -49,6 +49,9 @@ export const markOtpVerified = (phoneNumber: string, countryCode: string): Promi
     { new: true }
   ).exec();
 
+export const deleteOtpByPhone = (phoneNumber: string, countryCode: string): Promise<void> =>
+  Otp.deleteOne({ phoneNumber, countryCode }).exec().then(() => undefined);
+
 export const findUserByPhone = (phoneNumber: string, countryCode: string): Promise<IUser | null> =>
   User.findOne({ phoneNumber, countryCode }).exec();
 

@@ -2,14 +2,16 @@ export interface RefreshTokenDto {
   refreshToken: string;
 }
 
+/** E.164 in `phoneNumber`, or national digits with `countryCode` (+CC). */
 export interface SendOtpDto {
-  countryCode: string;
   phoneNumber: string;
+  countryCode?: string;
 }
 
+/** Same phone shape as send-otp; OTP is 6 digits. */
 export interface VerifyOtpDto {
-  countryCode: string;
   phoneNumber: string;
+  countryCode?: string;
   otp: string;
 }
 

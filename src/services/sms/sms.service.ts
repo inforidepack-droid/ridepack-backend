@@ -9,12 +9,14 @@ import { logger } from "@/config/logger";
 const toE164 = (countryCode: string, phoneNumber: string): string =>
   `${countryCode.replace(/\s/g, "")}${phoneNumber.replace(/\s/g, "")}`;
 
+const smsFromNumber = (): string => env.TWILIO_SMS_NUMBER || env.TWILIO_PHONE_NUMBER;
+
 const sendViaTwilio = async (to: string, body: string): Promise<void> => {
   const client = twilio(env.TWILIO_ACCOUNT_SID, env.TWILIO_AUTH_TOKEN);
   const message = await client.messages.create({
     body,
     to,
-    from: env.TWILIO_PHONE_NUMBER,
+    from: smsFromNumber(),
   });
   logger.info(`SMS sent via Twilio sid=${message.sid} to=${to}`);
 };
