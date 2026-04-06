@@ -21,8 +21,8 @@ export const verifyOtpSchema = phoneBody
   .extend({
     otp: z
       .string()
-      .length(6, "OTP must be exactly 6 digits")
-      .regex(/^\d{6}$/, "OTP must be 6 numeric digits"),
+      .length(4, "OTP must be exactly 4 digits")
+      .regex(/^\d{4}$/, "OTP must be 4 numeric digits"),
   })
   .refine((data) => normalizePhoneForOtp(data) !== null, {
     message: "Invalid phone number format",

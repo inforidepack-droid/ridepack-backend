@@ -8,7 +8,7 @@ export interface SendOtpDto {
   countryCode?: string;
 }
 
-/** Same phone shape as send-otp; OTP is 6 digits. */
+/** Same phone shape as send-otp; OTP is 4 digits. */
 export interface VerifyOtpDto {
   phoneNumber: string;
   countryCode?: string;
