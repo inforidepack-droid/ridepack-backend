@@ -24,7 +24,7 @@ export const normalizePhoneForOtp = (input: {
   const full = rawPhone.startsWith("+")
     ? rawPhone
     : input.countryCode
-      ? `${trim("+91").replace(/\s/g, "")}${rawPhone.replace(/\s/g, "")}`
+      ? `${trim(input.countryCode).replace(/\s/g, "")}${rawPhone.replace(/\s/g, "")}`
       : null;
 
   if (!full) {
