@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import api, { getApiErrorMessage } from "../api/api.js";
+import api from "../api/api.js";
 
 const ConnectStripe = () => {
   const [status, setStatus] = useState({
@@ -27,10 +27,10 @@ const ConnectStripe = () => {
         last4: data.last4 ?? null,
       });
     } catch (error) {
-      setErrorMessage(
-        getApiErrorMessage(error) ||
-          "Unable to load Stripe account status. Check your token and backend."
-      );
+      const message =
+        error?.response?.data?.message ||
+        "Unable to load Stripe account status. Check your rider token and backend.";
+      setErrorMessage(message);
     } finally {
       setIsLoading(false);
     }
@@ -60,14 +60,17 @@ const ConnectStripe = () => {
 
       window.location.href = url;
     } catch (error) {
-      const msg = getApiErrorMessage(error);
-      const alreadyConnected = msg.includes("already fully connected");
+      const alreadyConnected =
+        error?.response?.data?.message &&
+        error.response.data.message.includes("already fully connected");
 
       if (alreadyConnected) {
-        setErrorMessage("Stripe account is already connected for this user.");
+        setErrorMessage("Stripe account is already connected for this rider.");
         fetchStatus();
+      } else if (error?.response?.data?.message) {
+        setErrorMessage(error.response.data.message);
       } else {
-        setErrorMessage(msg || "Unexpected error while creating onboarding link.");
+        setErrorMessage("Unexpected error while creating onboarding link.");
       }
       setIsConnecting(false);
     }
@@ -80,9 +83,10 @@ const ConnectStripe = () => {
       await api.delete("/stripe/disconnect");
       fetchStatus();
     } catch (error) {
-      setErrorMessage(
-        getApiErrorMessage(error) || "Unable to disconnect Stripe account. Try again."
-      );
+      const message =
+        error?.response?.data?.message ||
+        "Unable to disconnect Stripe account. Try again.";
+      setErrorMessage(message);
     }
   };
 
@@ -93,12 +97,15 @@ const ConnectStripe = () => {
   return (
     <section aria-label="Stripe connect for riders">
       <div className="bg-white border border-slate-200 rounded-lg shadow-sm p-4">
-        <h2 className="text-lg font-semibold mb-2">Stripe Connect (payouts)</h2>
+        <h2 className="text-lg font-semibold mb-2">Rider Stripe Connect</h2>
         <p className="text-sm text-slate-600 mb-3">
-          Connect a Stripe Express account to receive payouts. Save your JWT in the bar
-          above (<code className="font-mono text-xs">user</code>,{" "}
-          <code className="font-mono text-xs">sender</code>, or{" "}
-          <code className="font-mono text-xs">rider</code> role).
+          Connect a rider&apos;s Stripe Express account to receive payouts. Use a JWT
+          token for a user with the <code className="font-mono text-xs">rider</code>{" "}
+          role in local storage under{" "}
+          <code className="font-mono text-xs bg-slate-100 px-1 py-0.5 rounded">
+            ridepack_token
+          </code>
+          .
         </p>
 
         {errorMessage ? (

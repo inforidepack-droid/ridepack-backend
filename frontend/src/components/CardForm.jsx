@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { CardElement, useElements, useStripe } from "@stripe/react-stripe-js";
-import api, { getApiErrorMessage } from "../api/api.js";
+import api from "../api/api.js";
 
 const cardElementClasses =
   "px-3 py-2 border border-slate-300 rounded-md bg-white shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500";
@@ -67,15 +67,15 @@ const CardForm = ({ onSuccess, onCancel }) => {
         onSuccess();
       }
     } catch (error) {
-      const msg = getApiErrorMessage(error);
-      const duplicateMessage = msg.includes("already");
+      const duplicateMessage =
+        error?.response?.data?.message && error.response.data.message.includes("already");
 
       if (duplicateMessage) {
         setErrorMessage("This card is already saved for this account.");
+      } else if (error?.response?.data?.message) {
+        setErrorMessage(error.response.data.message);
       } else {
-        setErrorMessage(
-          msg || "Unexpected error while saving card. Please try again."
-        );
+        setErrorMessage("Unexpected error while saving card. Please try again.");
       }
     } finally {
       setIsSubmitting(false);
