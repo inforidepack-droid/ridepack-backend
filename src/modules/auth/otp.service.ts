@@ -8,8 +8,11 @@ import { normalizePhoneForOtp } from "@/modules/auth/phoneE164.utils";
 import { assertOtpSendRateLimit } from "@/modules/auth/otp.rateLimit";
 import { sendLoginOtpWhatsApp } from "@/modules/auth/otp.twilio.delivery";
 import { generateOtp } from "@/utils/otpGenerator";
-import { env } from "@/config/env.config";
+import { env, isTwilioConfigured, isTwilioWhatsAppOtpConfigured } from "@/config/env.config";
 import { buildFcmPatch } from "@/modules/user/user.profile.utils";
+import { sendSms } from "@/services/sms/sms.service";
+import { logger } from "@/config/logger";
+import { HTTP_STATUS } from "@/constants/http.constants";
 import type { IUser } from "@/modules/auth/models/User.model";
 
 const OTP_EXPIRY_MINUTES = 5;
@@ -26,6 +29,43 @@ const requireNormalizedPhone = (dto: SendOtpDto | VerifyOtpDto) => {
     throw createError("Invalid phone number format", 400);
   }
   return normalized;
+};
+
+const buildSmsOtpBody = (code: string): string =>
+  `Your RidePack verification code is ${code}. Valid for ${OTP_EXPIRY_MINUTES} minutes.`;
+
+/** Non-dev: sends OTP via WhatsApp and/or SMS when each channel is configured. */
+const deliverOtpNonDev = async (params: {
+  e164: string;
+  countryCode: string;
+  nationalNumber: string;
+  plainOtp: string;
+}): Promise<void> => {
+  const whatsAppReady = isTwilioWhatsAppOtpConfigured();
+  const smsReady = isTwilioConfigured();
+
+  if (!whatsAppReady && !smsReady) {
+    throw createError(
+      "OTP delivery is not configured. Set Twilio WhatsApp (TWILIO_WHATSAPP_NUMBER + TWILIO_OTP_CONTENT_SID) and/or SMS (TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_SMS_NUMBER or TWILIO_PHONE_NUMBER).",
+      HTTP_STATUS.SERVICE_UNAVAILABLE
+    );
+  }
+
+  if (whatsAppReady) {
+    await sendLoginOtpWhatsApp(params.e164, params.plainOtp);
+  }
+
+  if (smsReady) {
+    try {
+      await sendSms(params.countryCode, params.nationalNumber, buildSmsOtpBody(params.plainOtp));
+    } catch (err) {
+      const detail = err instanceof Error ? err.message : "SMS send failed";
+      logger.error("OTP SMS delivery failed", { detail });
+      if (!whatsAppReady) {
+        throw createError(`Failed to send OTP via SMS: ${detail}`, HTTP_STATUS.BAD_GATEWAY);
+      }
+    }
+  }
 };
 
 const issueTokensAfterOtpSuccess = async (
@@ -105,28 +145,8 @@ export const sendOtp = async (
   });
 
   if (!isDevMode()) {
-    await sendLoginOtpWhatsApp(e164, plainOtp);
+    await deliverOtpNonDev({ e164, countryCode, nationalNumber, plainOtp });
   }
-
-  /*
-   * ─── SMS OTP (ENABLE AFTER A2P APPROVAL) — do not remove; switch delivery above ───
-   * Option A — shared helper (Twilio SMS via `src/services/sms/sms.service.ts`):
-   *   import { sendSms } from "@/services/sms/sms.service";
-   *   const OTP_MESSAGE_TEMPLATE = (code: string) =>
-   *     `Your Ridepack verification code is: ${code}. Valid for ${OTP_EXPIRY_MINUTES} minutes.`;
-   *   await sendSms(countryCode, nationalNumber, OTP_MESSAGE_TEMPLATE(plainOtp));
-   *
-   * Option B — direct Twilio (same as commented block in `otp.twilio.delivery.ts`):
-   *   const client = getTwilioClient();
-   *   if (!client) throw createError("OTP delivery is not configured.", 503);
-   *   await client.messages.create({
-   *     body: `Your RidePack OTP is ${plainOtp}`,
-   *     from: process.env.TWILIO_SMS_NUMBER ?? "",
-   *     to: e164,
-   *   });
-   *
-   * When enabling SMS: comment out or remove the `sendLoginOtpWhatsApp` line above to avoid sending twice.
-   */
 
   return { success: true, message: "OTP sent successfully" };
 };

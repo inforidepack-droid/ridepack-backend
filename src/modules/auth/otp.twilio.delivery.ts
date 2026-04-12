@@ -22,7 +22,8 @@ const twilioErrorCode = (err: unknown): string | undefined =>
     : undefined;
 
 /**
- * Sends login OTP via Twilio WhatsApp (Content API). SMS path remains commented until A2P approval.
+ * Sends login OTP via Twilio WhatsApp (Content API).
+ * SMS is sent separately from `otp.service` when `isTwilioConfigured()` is true.
  * Never logs the OTP in production.
  */
 export const sendLoginOtpWhatsApp = async (e164: string, otp: string): Promise<void> => {
@@ -69,20 +70,4 @@ export const sendLoginOtpWhatsApp = async (e164: string, otp: string): Promise<v
     }
     throw createError("Failed to send OTP. Please try again later.", 502);
   }
-
-  /*
-   * ─── SMS IMPLEMENTATION (ENABLE AFTER A2P APPROVAL) — full Twilio SMS path kept here, commented ───
-   * Same pattern as legacy OTP SMS; uses E.164 `to`. Uncomment when A2P is approved and pause WhatsApp above if you only want SMS.
-   *
-   * await client.messages.create({
-   *   body: `Your RidePack OTP is ${otp}`,
-   *   from: process.env.TWILIO_SMS_NUMBER ?? "",
-   *   to: e164,
-   * });
-   *
-   * Or use the shared helper from `src/services/sms/sms.service.ts` (pass countryCode + nationalNumber, not e164):
-   *   import { sendSms } from "@/services/sms/sms.service";
-   *   await sendSms(countryCode, nationalNumber, `Your RidePack OTP is ${otp}. Valid for 5 minutes.`);
-   * (Requires passing countryCode/nationalNumber into this function when you switch.)
-   */
 };

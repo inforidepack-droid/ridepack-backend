@@ -49,7 +49,16 @@ export const findSenderBookingsForRequestList = (
     .sort({ createdAt: sortDir })
     .skip(skip)
     .limit(limit)
-    .populate("tripId", "fromLocation toLocation riderId")
+    .populate({
+      path: "tripId",
+      select:
+        "fromLocation toLocation travelDate departureTime arrivalTime riderId status capacity remainingCapacity price vehicleType publishedAt createdAt updatedAt",
+      populate: {
+        path: "riderId",
+        select:
+          "firstName lastName name profileImage ratingAverage ratingCount phoneNumber countryCode",
+      },
+    })
     .lean()
     .exec() as Promise<BookingLean[]>;
 };
