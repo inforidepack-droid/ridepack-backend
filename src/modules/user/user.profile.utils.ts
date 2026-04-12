@@ -3,6 +3,19 @@ import type { UpdateProfileBody } from "@/modules/user/user.types";
 
 type CurrentProfile = Pick<IUser, "name" | "firstName" | "lastName">;
 
+/** Shared with PATCH profile and verify-otp (push registration). */
+export const buildFcmPatch = (data: { fcmToken?: string; deviceType?: string }): Partial<IUser> => {
+  const patch: Partial<IUser> = {};
+  if (data.fcmToken !== undefined) {
+    const t = data.fcmToken.trim();
+    patch.fcmToken = t || undefined;
+  }
+  if (data.deviceType !== undefined) {
+    patch.deviceType = data.deviceType.trim().toLowerCase();
+  }
+  return patch;
+};
+
 const resolvePart = (incoming: string | undefined, current: string | null | undefined): string => {
   if (incoming !== undefined) return incoming.trim();
   return (current ?? "").trim();
@@ -44,6 +57,8 @@ export const buildIdentityPatch = (current: CurrentProfile, data: UpdateProfileB
       patch.name = combined;
     }
   }
+
+  Object.assign(patch, buildFcmPatch(data));
 
   return patch;
 };

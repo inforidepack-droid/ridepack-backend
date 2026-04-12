@@ -2,17 +2,24 @@ export interface RefreshTokenDto {
   refreshToken: string;
 }
 
-/** E.164 in `phoneNumber`, or national digits with `countryCode` (+CC). */
+/**
+ * US (+1) or India (+91) OTP. Either:
+ * - `countryCode: "+1" | "+91"` + national `phoneNumber`, or
+ * - E.164 in `phoneNumber`; omit `countryCode` or set it to match.
+ */
 export interface SendOtpDto {
-  phoneNumber: string;
   countryCode?: string;
+  phoneNumber: string;
 }
 
-/** Same phone shape as send-otp; OTP is 4 digits. */
+/** Same phone shape as send-otp; OTP is 4 digits. Optional push fields (same as PATCH /api/user/profile). */
 export interface VerifyOtpDto {
-  phoneNumber: string;
   countryCode?: string;
+  phoneNumber: string;
   otp: string;
+  /** Same as PATCH /api/user/profile — optional push registration on login. */
+  fcmToken?: string;
+  deviceType?: string;
 }
 
 export interface OtpResponse {

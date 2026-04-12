@@ -8,9 +8,17 @@ import { normalizePhoneForOtp } from "@/modules/auth/phoneE164.utils";
 import { assertOtpSendRateLimit } from "@/modules/auth/otp.rateLimit";
 import { sendLoginOtpWhatsApp } from "@/modules/auth/otp.twilio.delivery";
 import { generateOtp } from "@/utils/otpGenerator";
+import { env } from "@/config/env.config";
+import { buildFcmPatch } from "@/modules/user/user.profile.utils";
+import type { IUser } from "@/modules/auth/models/User.model";
 
 const OTP_EXPIRY_MINUTES = 5;
 const MAX_ATTEMPTS = 5;
+
+/** Fixed OTP in `NODE_ENV === "development"` only (never in production). */
+const DEV_STATIC_OTP = "1234";
+
+const isDevMode = (): boolean => env.NODE_ENV === "development";
 
 const requireNormalizedPhone = (dto: SendOtpDto | VerifyOtpDto) => {
   const normalized = normalizePhoneForOtp(dto);
@@ -20,6 +28,62 @@ const requireNormalizedPhone = (dto: SendOtpDto | VerifyOtpDto) => {
   return normalized;
 };
 
+const issueTokensAfterOtpSuccess = async (
+  dto: VerifyOtpDto,
+  normalized: { countryCode: string; nationalNumber: string }
+): Promise<VerifyOtpResponse> =>
+  issueTokensForPhoneUser(dto, normalized.nationalNumber, normalized.countryCode);
+
+const issueTokensForPhoneUser = async (
+  dto: VerifyOtpDto,
+  nationalNumber: string,
+  countryCode: string
+): Promise<VerifyOtpResponse> => {
+  const fcmPatch: Partial<IUser> = buildFcmPatch({
+    fcmToken: dto.fcmToken,
+    deviceType: dto.deviceType,
+  });
+
+  let user = await authRepository.findUserByPhone(nationalNumber, countryCode);
+  if (!user) {
+    user = await authRepository.createUser({
+      phoneNumber: nationalNumber,
+      countryCode,
+      isPhoneVerified: true,
+      authProvider: "phone",
+      ...fcmPatch,
+    });
+  } else {
+    const updated = await authRepository.updateUserById(user._id.toString(), {
+      isPhoneVerified: true,
+      authProvider: user.authProvider ?? "phone",
+      ...fcmPatch,
+    });
+    user = updated ?? user;
+  }
+
+  const userId = user._id.toString();
+  const payload: TokenPayload = {
+    userId,
+    phoneNumber: user.phoneNumber ?? undefined,
+    countryCode: user.countryCode ?? undefined,
+  };
+  const accessToken = generateToken(payload);
+  const refreshToken = generateRefreshToken(payload);
+  await authRepository.setRefreshToken(userId, refreshToken, 7 * 24 * 60 * 60);
+
+  const userData = toAuthUserResponse(user);
+
+  return {
+    success: true,
+    data: {
+      user: userData,
+      accessToken,
+      refreshToken,
+    },
+  };
+};
+
 export const sendOtp = async (
   sendOtpDto: SendOtpDto
 ): Promise<{ success: boolean; message: string }> => {
@@ -27,7 +91,7 @@ export const sendOtp = async (
 
   await assertOtpSendRateLimit(e164);
 
-  const plainOtp = generateOtp();
+  const plainOtp = isDevMode() ? DEV_STATIC_OTP : generateOtp();
   const hashedOtp = await hashPassword(plainOtp);
 
   const expiresAt = new Date();
@@ -40,7 +104,9 @@ export const sendOtp = async (
     expiresAt,
   });
 
-  await sendLoginOtpWhatsApp(e164, plainOtp);
+  if (!isDevMode()) {
+    await sendLoginOtpWhatsApp(e164, plainOtp);
+  }
 
   /*
    * ─── SMS OTP (ENABLE AFTER A2P APPROVAL) — do not remove; switch delivery above ───
@@ -66,8 +132,14 @@ export const sendOtp = async (
 };
 
 export const verifyOtp = async (verifyOtpDto: VerifyOtpDto): Promise<VerifyOtpResponse> => {
-  const { countryCode, nationalNumber } = requireNormalizedPhone(verifyOtpDto);
+  const normalized = requireNormalizedPhone(verifyOtpDto);
+  const { countryCode, nationalNumber } = normalized;
   const { otp } = verifyOtpDto;
+
+  if (isDevMode() && otp === DEV_STATIC_OTP) {
+    await authRepository.deleteOtpByPhone(nationalNumber, countryCode);
+    return issueTokensAfterOtpSuccess(verifyOtpDto, normalized);
+  }
 
   const otpRecord = await authRepository.findOtpByPhone(nationalNumber, countryCode);
   if (!otpRecord) {
@@ -97,40 +169,5 @@ export const verifyOtp = async (verifyOtpDto: VerifyOtpDto): Promise<VerifyOtpRe
 
   await authRepository.deleteOtpByPhone(nationalNumber, countryCode);
 
-  let user = await authRepository.findUserByPhone(nationalNumber, countryCode);
-  if (!user) {
-    user = await authRepository.createUser({
-      phoneNumber: nationalNumber,
-      countryCode,
-      isPhoneVerified: true,
-      authProvider: "phone",
-    });
-  } else {
-    const updated = await authRepository.updateUserById(user._id.toString(), {
-      isPhoneVerified: true,
-      authProvider: user.authProvider ?? "phone",
-    });
-    user = updated ?? user;
-  }
-
-  const userId = user._id.toString();
-  const payload: TokenPayload = {
-    userId,
-    phoneNumber: user.phoneNumber ?? undefined,
-    countryCode: user.countryCode ?? undefined,
-  };
-  const accessToken = generateToken(payload);
-  const refreshToken = generateRefreshToken(payload);
-  await authRepository.setRefreshToken(userId, refreshToken, 7 * 24 * 60 * 60);
-
-  const userData = toAuthUserResponse(user);
-
-  return {
-    success: true,
-    data: {
-      user: userData,
-      accessToken,
-      refreshToken,
-    },
-  };
+  return issueTokensAfterOtpSuccess(verifyOtpDto, normalized);
 };

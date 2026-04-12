@@ -22,6 +22,10 @@ export interface IUser extends Document {
   authProvider?: "google" | "phone";
   stripeCustomerId?: string;
   stripeAccountId?: string;
+  /** Firebase Cloud Messaging token for push (set via PATCH profile). */
+  fcmToken?: string;
+  /** Client platform for push (e.g. android, ios). */
+  deviceType?: string;
   verification?: {
     provider?: string;
     sessionId?: string;
@@ -144,6 +148,18 @@ const userSchema = new Schema<IUser>(
     },
     stripeAccountId: {
       type: String,
+    },
+    fcmToken: {
+      type: String,
+      required: false,
+      trim: true,
+      select: false,
+    },
+    deviceType: {
+      type: String,
+      required: false,
+      trim: true,
+      lowercase: true,
     },
   },
   {

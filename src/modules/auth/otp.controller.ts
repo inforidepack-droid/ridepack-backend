@@ -7,7 +7,6 @@ import { SendOtpDto, VerifyOtpDto } from "@/modules/auth/auth.types";
 export const sendOtpController = asyncHandler(
   async (req: Request, res: Response): Promise<void> => {
     const sendOtpDto: SendOtpDto = req.body;
-    console.log(sendOtpDto);
     const result = await sendOtp(sendOtpDto);
     sendSuccess(res, { message: result.message });
   }
