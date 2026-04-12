@@ -16,6 +16,7 @@ import trackingRoutes from "@/modules/tracking/tracking.routes";
 import vehicleRoutes from "@/modules/vehicle/vehicle.routes";
 import chatRoutes from "@/modules/chat/chat.routes";
 import reviewRoutes from "@/modules/review/review.routes";
+import walletRoutes from "@/modules/wallet/wallet.routes";
 
 const router = Router();
 
@@ -36,5 +37,6 @@ router.use("/webhooks", stripeWebhookRouter);
 router.use("/vehicles", vehicleRoutes);
 router.use("/chat", chatRoutes);
 router.use("/reviews", reviewRoutes);
+router.use("/wallet", walletRoutes);
 
 export default router;
