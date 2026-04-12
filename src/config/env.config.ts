@@ -41,6 +41,15 @@ export const env = {
   ENABLE_SOCKET: (process.env.ENABLE_SOCKET || "false").toLowerCase() === "true",
   /** Min length 16. Required for POST /api/wallet/credit (header x-wallet-internal-secret). */
   WALLET_INTERNAL_SECRET: process.env.WALLET_INTERNAL_SECRET ?? "",
+  /** SMTP host (e.g. smtp.gmail.com, smtp.sendgrid.net). Empty disables sendEmail. */
+  SMTP_HOST: process.env.SMTP_HOST ?? "",
+  SMTP_PORT: parseInt(process.env.SMTP_PORT || "587", 10),
+  /** Use TLS on port 465; false for STARTTLS on 587. */
+  SMTP_SECURE: (process.env.SMTP_SECURE || "false").toLowerCase() === "true",
+  SMTP_USER: process.env.SMTP_USER ?? "",
+  SMTP_PASS: process.env.SMTP_PASS ?? "",
+  /** Default From address (RFC5322). Required when SMTP is used. */
+  EMAIL_FROM: process.env.EMAIL_FROM ?? "",
 } as const;
 
 /** SMS helper (`sendSms`) is “configured” when Twilio creds exist and a from-number is set (SMS or legacy phone). */
@@ -62,3 +71,13 @@ export const isTwilioWhatsAppOtpConfigured = (): boolean =>
 
 export const isS3Configured = (): boolean =>
   Boolean(env.AWS_ACCESS_KEY_ID && env.AWS_SECRET_ACCESS_KEY && env.S3_BUCKET);
+
+/** Outbound transactional email (nodemailer SMTP). */
+export const isSmtpEmailConfigured = (): boolean => {
+  const host = env.SMTP_HOST.trim();
+  const from = env.EMAIL_FROM.trim();
+  if (!host || !from) return false;
+  const user = env.SMTP_USER.trim();
+  if (user && !env.SMTP_PASS.trim()) return false;
+  return true;
+};
