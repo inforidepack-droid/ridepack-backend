@@ -2,10 +2,12 @@ import { Response, NextFunction } from "express";
 import { createError } from "@/utils/appError";
 import User from "@/modules/auth/models/User.model";
 import { AuthRequest } from "@/middlewares/auth";
+import { isMarketplaceParticipantRole } from "@/constants/marketplace.roles";
 
 /**
- * Ensures the authenticated user has role "rider" and is not blocked.
- * Use before creating a rider profile.
+ * Ensures the authenticated user is a marketplace participant (`user`, `sender`, or `rider`)
+ * and not blocked — same rule as payment methods / Stripe Connect. Use before rider-profile
+ * creation, vehicles, wallet withdraw, etc.
  */
 export const requireRider = async (
   req: AuthRequest,
@@ -25,8 +27,14 @@ export const requireRider = async (
     next(createError("Account is blocked", 403));
     return;
   }
-  if ((user as { role?: string }).role !== "rider") {
-    next(createError("Only users with rider role can perform this action", 403));
+  const role = (user as { role?: string }).role;
+  if (!isMarketplaceParticipantRole(role)) {
+    next(
+      createError(
+        "Only marketplace users (user, sender, or rider) can perform this action",
+        403
+      )
+    );
     return;
   }
   next();
