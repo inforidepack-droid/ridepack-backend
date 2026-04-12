@@ -17,6 +17,7 @@ import vehicleRoutes from "@/modules/vehicle/vehicle.routes";
 import chatRoutes from "@/modules/chat/chat.routes";
 import reviewRoutes from "@/modules/review/review.routes";
 import walletRoutes from "@/modules/wallet/wallet.routes";
+import requestRoutes from "@/modules/request/request.routes";
 
 const router = Router();
 
@@ -38,5 +39,6 @@ router.use("/vehicles", vehicleRoutes);
 router.use("/chat", chatRoutes);
 router.use("/reviews", reviewRoutes);
 router.use("/wallet", walletRoutes);
+router.use("/requests", requestRoutes);
 
 export default router;

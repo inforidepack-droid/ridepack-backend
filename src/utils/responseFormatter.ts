@@ -2,7 +2,14 @@ import { Response } from "express";
 import { HTTP_STATUS } from "@/constants/http.constants";
 import { API_STATUS } from "@/constants/status.constants";
 
-type SuccessPayload<T = unknown> = { data?: T; message?: string };
+type PaginationMeta = {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+};
+
+type SuccessPayload<T = unknown> = { data?: T; message?: string; pagination?: PaginationMeta };
 type FailPayload = { message: string; errors?: unknown };
 
 export const sendSuccess = <T>(
