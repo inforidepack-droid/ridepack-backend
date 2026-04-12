@@ -7,7 +7,10 @@ export interface IRider extends Document {
   isKycVerified: boolean;
   vehicleType: string;
   vehicleDetails?: IVehicleDetails;
+  /** Legacy display field; kept in sync with `ratingAverage` when reviews exist. */
   rating: number;
+  ratingAverage: number;
+  ratingCount: number;
   totalTrips: number;
   totalDeliveries: number;
   createdAt: Date;
@@ -38,7 +41,9 @@ const riderSchema = new Schema<IRider>(
       required: true,
     },
     vehicleDetails: { type: vehicleDetailsSchema },
-    rating: { type: Number, default: 5, min: 0, max: 5 },
+    rating: { type: Number, default: 0, min: 0, max: 5 },
+    ratingAverage: { type: Number, default: 0, min: 0, max: 5 },
+    ratingCount: { type: Number, default: 0, min: 0 },
     totalTrips: { type: Number, default: 0, min: 0 },
     totalDeliveries: { type: Number, default: 0, min: 0 },
   },

@@ -30,6 +30,18 @@ export const create = (data: CreateBookingInput): Promise<BookingLean> =>
 export const findById = (bookingId: string): Promise<BookingLean | null> =>
   Booking.findById(bookingId).lean().exec() as Promise<BookingLean | null>;
 
+export type BookingWithTripRiderLean = Omit<BookingLean, "tripId"> & {
+  tripId: { _id: mongoose.Types.ObjectId; riderId: mongoose.Types.ObjectId } | null;
+};
+
+export const findByIdWithTripRider = (
+  bookingId: string
+): Promise<BookingWithTripRiderLean | null> =>
+  Booking.findById(bookingId)
+    .populate({ path: "tripId", select: "riderId" })
+    .lean()
+    .exec() as Promise<BookingWithTripRiderLean | null>;
+
 export const findByIdWithSender = (
   bookingId: string,
   senderId: string

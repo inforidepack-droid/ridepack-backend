@@ -22,6 +22,9 @@ export interface IUser extends Document {
   authProvider?: "google" | "phone";
   stripeCustomerId?: string;
   stripeAccountId?: string;
+  /** Denormalized delivery-review aggregate for riders (same as Rider profile). */
+  ratingAverage?: number;
+  ratingCount?: number;
   /** Firebase Cloud Messaging token for push (set via PATCH profile). */
   fcmToken?: string;
   /** Client platform for push (e.g. android, ios). */
@@ -149,6 +152,8 @@ const userSchema = new Schema<IUser>(
     stripeAccountId: {
       type: String,
     },
+    ratingAverage: { type: Number, default: 0, min: 0, max: 5 },
+    ratingCount: { type: Number, default: 0, min: 0 },
     fcmToken: {
       type: String,
       required: false,
