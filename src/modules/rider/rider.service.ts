@@ -46,13 +46,16 @@ export const getRiderByIdForResponse = async (id: string) => {
   }
   const u = rider.userId as { _id?: mongoose.Types.ObjectId; name?: string; email?: string; phoneNumber?: string } | null;
   const userId = u && typeof u === "object" && "_id" in u ? (u._id ?? rider.userId) : rider.userId;
+  const r = rider as typeof rider & { ratingAverage?: number; ratingCount?: number };
   return {
     _id: rider._id,
     userId,
     isKycVerified: rider.isKycVerified,
     vehicleType: rider.vehicleType,
     vehicleDetails: rider.vehicleDetails,
-    rating: rider.rating,
+    rating: r.rating,
+    ratingAverage: r.ratingAverage ?? r.rating,
+    ratingCount: r.ratingCount ?? 0,
     totalTrips: rider.totalTrips,
     totalDeliveries: rider.totalDeliveries,
     createdAt: rider.createdAt,

@@ -71,6 +71,7 @@ const run = async (): Promise<void> => {
         continue;
       }
 
+      const demoRating = Math.round((4 + Math.random()) * 10) / 10;
       await Rider.create({
         userId: user._id,
         isKycVerified: false,
@@ -80,7 +81,9 @@ const run = async (): Promise<void> => {
           color: COLORS[i - 1],
           plateNumber: randomPlate(),
         },
-        rating: Math.round((4 + Math.random()) * 10) / 10,
+        rating: demoRating,
+        ratingAverage: demoRating,
+        ratingCount: randomInRange(1, 30),
         totalTrips: randomInRange(0, 50),
         totalDeliveries: randomInRange(0, 100),
       });

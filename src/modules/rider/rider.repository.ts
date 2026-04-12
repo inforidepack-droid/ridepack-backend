@@ -39,3 +39,21 @@ export const updateById = (
   Rider.findByIdAndUpdate(id, data, { new: true })
     .lean()
     .exec() as Promise<RiderLean | null>;
+
+export const updateRatingStatsByUserId = (
+  userId: string,
+  stats: { ratingAverage: number; ratingCount: number; rating: number }
+): Promise<RiderLean | null> =>
+  Rider.findOneAndUpdate(
+    { userId: new mongoose.Types.ObjectId(userId) },
+    {
+      $set: {
+        ratingAverage: stats.ratingAverage,
+        ratingCount: stats.ratingCount,
+        rating: stats.rating,
+      },
+    },
+    { new: true }
+  )
+    .lean()
+    .exec() as Promise<RiderLean | null>;

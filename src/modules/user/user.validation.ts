@@ -52,4 +52,16 @@ export const updateProfileValidation = () => [
     .trim()
     .isLength({ max: USER_CONSTANTS.ADDRESS_MAX })
     .withMessage(`address max ${USER_CONSTANTS.ADDRESS_MAX} characters`),
+  body("fcmToken")
+    .optional()
+    .isString()
+    .trim()
+    .isLength({ max: USER_CONSTANTS.FCM_TOKEN_MAX })
+    .withMessage(`fcmToken max ${USER_CONSTANTS.FCM_TOKEN_MAX} characters`),
+  body("deviceType")
+    .optional()
+    .isString()
+    .trim()
+    .isIn([...USER_CONSTANTS.DEVICE_TYPES])
+    .withMessage(`deviceType must be one of: ${USER_CONSTANTS.DEVICE_TYPES.join(", ")}`),
 ];

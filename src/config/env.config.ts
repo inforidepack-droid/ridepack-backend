@@ -39,6 +39,8 @@ export const env = {
   GOOGLE_MAPS_API_KEY: process.env.GOOGLE_MAPS_API_KEY ?? "",
   GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID ?? "",
   ENABLE_SOCKET: (process.env.ENABLE_SOCKET || "false").toLowerCase() === "true",
+  /** Min length 16. Required for POST /api/wallet/credit (header x-wallet-internal-secret). */
+  WALLET_INTERNAL_SECRET: process.env.WALLET_INTERNAL_SECRET ?? "",
 } as const;
 
 /** SMS helper (`sendSms`) is “configured” when Twilio creds exist and a from-number is set (SMS or legacy phone). */

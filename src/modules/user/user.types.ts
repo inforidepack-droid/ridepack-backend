@@ -14,4 +14,8 @@ export type UpdateProfileBody = {
   countryCode?: string;
   /** Free-form single-line or multi-line address text. */
   address?: string;
+  /** FCM device token for push notifications (set with deviceType). */
+  fcmToken?: string;
+  /** Client platform: android | ios | web */
+  deviceType?: string;
 };
