@@ -60,6 +60,7 @@ const bookingSchema = new Schema<IBooking>(
 
 bookingSchema.index({ tripId: 1, status: 1 });
 bookingSchema.index({ senderId: 1 });
+bookingSchema.index({ senderId: 1, createdAt: -1 });
 
 const Booking: Model<IBooking> =
   mongoose.models.Booking || mongoose.model<IBooking>("Booking", bookingSchema);
