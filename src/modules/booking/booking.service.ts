@@ -12,12 +12,15 @@ import Transaction from "@/modules/booking/transaction.model";
 import { ensureUserVerificationApprovedForBooking } from "@/modules/verification/verification.service";
 import { validateBookingReadyForPayment } from "@/modules/booking/booking.payment.service";
 import { assertPaymentIntentMatchesBooking } from "@/modules/booking/booking.stripe.utils";
+import { generateOtp } from "@/utils/otp.generate.utils";
+import { sendParcelDeliveryOtpSms } from "@/modules/booking/booking.parcelOtp.twilio";
+import { toPublicBookingLean } from "@/modules/booking/booking.public.utils";
 
 export type CreateBookingBody = {
   tripId: string;
   parcel: { weight: number; length: number; width: number; height: number; description?: string };
   senderDetails: { name: string; phone: string };
-  receiverDetails: { name: string; phone: string };
+  receiverDetails: { name: string; phone: string; countryCode?: string };
   packageImages: string[];
   agreedPrice: number;
   illegalItemsDeclaration: boolean;
@@ -113,7 +116,8 @@ export const createBooking = async (
     );
   }
 
-  return bookingRepository.create({
+  const deliveryOtp = generateOtp();
+  const booking = await bookingRepository.create({
     tripId,
     senderId,
     parcel,
@@ -122,7 +126,30 @@ export const createBooking = async (
     packageImages,
     agreedPrice,
     illegalItemsDeclaration: body.illegalItemsDeclaration,
+    deliveryOtp,
   });
+
+  try {
+    await sendParcelDeliveryOtpSms(
+      {
+        phone: receiverDetails.phone,
+        countryCode: receiverDetails.countryCode,
+      },
+      deliveryOtp
+    );
+  } catch (e) {
+    await bookingRepository.deleteById(booking._id.toString());
+    const invalid = e instanceof Error && e.message === "INVALID_RECEIVER_PHONE";
+    if (invalid) {
+      throw createError(
+        "Receiver phone is invalid or not supported for SMS (+1 / +91; use E.164 or countryCode + national digits)",
+        HTTP_STATUS.BAD_REQUEST
+      );
+    }
+    throw createError("Failed to send delivery OTP via SMS", HTTP_STATUS.BAD_GATEWAY);
+  }
+
+  return toPublicBookingLean(booking);
 };
 
 export const acceptBookingRequest = async (

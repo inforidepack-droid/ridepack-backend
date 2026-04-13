@@ -9,9 +9,18 @@ export const listMyBookingsValidation = () => [
     .withMessage("status must be 'live' or 'completed'"),
 ];
 
-const contactValidator = (prefix: string) => [
+const contactValidator = (prefix: string, countryOptional = false) => [
   body(`${prefix}.name`).notEmpty().trim().withMessage(`${prefix}.name required`),
   body(`${prefix}.phone`).notEmpty().trim().withMessage(`${prefix}.phone required`),
+  ...(countryOptional
+    ? [
+        body(`${prefix}.countryCode`)
+          .optional()
+          .trim()
+          .isIn(["+1", "+91"])
+          .withMessage(`${prefix}.countryCode must be +1 or +91 when provided`),
+      ]
+    : []),
 ];
 
 export const createBookingValidation = () => [
@@ -22,7 +31,7 @@ export const createBookingValidation = () => [
   body("parcel.height").isFloat({ min: 0.01 }).withMessage("parcel.height required and > 0"),
   body("parcel.description").optional().isString(),
   ...contactValidator("senderDetails"),
-  ...contactValidator("receiverDetails"),
+  ...contactValidator("receiverDetails", true),
   body("packageImages")
     .isArray({ min: MIN_PACKAGE_IMAGES })
     .withMessage(`At least ${MIN_PACKAGE_IMAGES} package images required`),
@@ -46,4 +55,20 @@ export const createBookingPaymentIntentValidation = () => [
 export const payBookingValidation = () => [
   body("paymentSignature").optional().isString(),
   body("paymentIntentId").optional().isString(),
+];
+
+const parcelOtpBody = () => [
+  body("bookingId").notEmpty().isMongoId().withMessage("bookingId must be a valid id"),
+  body("otp")
+    .notEmpty()
+    .matches(/^\d{4}$/)
+    .withMessage("otp must be exactly 4 digits"),
+];
+
+export const verifyPickupOtpValidation = () => parcelOtpBody();
+
+export const verifyDeliveryOtpValidation = () => parcelOtpBody();
+
+export const resendDeliveryOtpValidation = () => [
+  body("bookingId").notEmpty().isMongoId().withMessage("bookingId must be a valid id"),
 ];

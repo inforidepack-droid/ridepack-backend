@@ -8,6 +8,11 @@ import {
   payBooking,
   listMyBookings,
 } from "@/modules/booking/booking.service";
+import {
+  verifyPickupOtp,
+  verifyDeliveryOtp,
+  resendDeliveryOtp,
+} from "@/modules/booking/booking.parcelOtp.service";
 import { createBookingPaymentIntent } from "@/modules/booking/booking.payment.service";
 import type {
   CreateBookingBody,
@@ -62,5 +67,32 @@ export const listMyBookingsController = asyncHandler(
     const status = (req.query.status as string) as MyBookingsStatusFilter;
     const bookings = await listMyBookings(req.user.userId, status);
     sendSuccess(res, { data: { bookings } });
+  }
+);
+
+export const verifyPickupOtpController = asyncHandler(
+  async (req: AuthRequest, res: Response): Promise<void> => {
+    if (!req.user) throw createError("Unauthorized", 401);
+    const { bookingId, otp } = req.body as { bookingId: string; otp: string };
+    const booking = await verifyPickupOtp(req.user.userId, bookingId, otp);
+    sendSuccess(res, { data: { booking }, message: "Pickup verified" });
+  }
+);
+
+export const verifyDeliveryOtpController = asyncHandler(
+  async (req: AuthRequest, res: Response): Promise<void> => {
+    if (!req.user) throw createError("Unauthorized", 401);
+    const { bookingId, otp } = req.body as { bookingId: string; otp: string };
+    const booking = await verifyDeliveryOtp(req.user.userId, bookingId, otp);
+    sendSuccess(res, { data: { booking }, message: "Delivery verified" });
+  }
+);
+
+export const resendDeliveryOtpController = asyncHandler(
+  async (req: AuthRequest, res: Response): Promise<void> => {
+    if (!req.user) throw createError("Unauthorized", 401);
+    const { bookingId } = req.body as { bookingId: string };
+    await resendDeliveryOtp(req.user.userId, bookingId);
+    sendSuccess(res, { data: { ok: true }, message: "Delivery OTP resent to receiver" });
   }
 );

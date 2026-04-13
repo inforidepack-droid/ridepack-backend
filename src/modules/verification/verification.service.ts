@@ -19,6 +19,7 @@ import {
   extractSessionIdAndDecision,
   timingSafeEquals,
 } from "@/modules/verification/veriff-webhook.utils";
+import { generateOtp } from "@/utils/otp.generate.utils";
 
 const resolveVerificationStatus = (status?: string): VerificationStatus => {
   const normalized = (status || "").toLowerCase();
@@ -230,6 +231,15 @@ export const handleVeriffWebhook = async (
 
   const isVerified = normalizedStatus === VERIFICATION_STATUS.APPROVED;
 
+  let profileOtpToSet: string | undefined;
+  if (isVerified) {
+    const cur = await User.findById(user._id).select("+profileOtp").lean().exec();
+    const existing = (cur as { profileOtp?: string } | null)?.profileOtp;
+    if (!existing) {
+      profileOtpToSet = generateOtp();
+    }
+  }
+
   await User.findByIdAndUpdate(
     user._id,
     {
@@ -239,6 +249,7 @@ export const handleVeriffWebhook = async (
         "verification.status": normalizedStatus,
         "verification.verifiedAt": verifiedAtToSet,
         isVerified,
+        ...(profileOtpToSet !== undefined ? { profileOtp: profileOtpToSet } : {}),
       },
     },
     { new: true }
