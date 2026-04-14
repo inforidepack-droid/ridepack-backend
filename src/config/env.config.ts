@@ -50,7 +50,22 @@ export const env = {
   SMTP_PASS: process.env.SMTP_PASS ?? "",
   /** Default From address (RFC5322). Required when SMTP is used. */
   EMAIL_FROM: process.env.EMAIL_FROM ?? "",
+  /** Firebase Admin (FCM). Use either a service account JSON file path or inline credentials. */
+  FIREBASE_SERVICE_ACCOUNT_PATH: process.env.FIREBASE_SERVICE_ACCOUNT_PATH ?? "",
+  FIREBASE_PROJECT_ID: process.env.FIREBASE_PROJECT_ID ?? "",
+  FIREBASE_CLIENT_EMAIL: process.env.FIREBASE_CLIENT_EMAIL ?? "",
+  /** PEM private key; use \\n for newlines in .env */
+  FIREBASE_PRIVATE_KEY: process.env.FIREBASE_PRIVATE_KEY ?? "",
 } as const;
+
+export const isFirebaseConfigured = (): boolean => {
+  if (env.FIREBASE_SERVICE_ACCOUNT_PATH.trim()) return true;
+  return Boolean(
+    env.FIREBASE_PROJECT_ID.trim() &&
+      env.FIREBASE_CLIENT_EMAIL.trim() &&
+      env.FIREBASE_PRIVATE_KEY.trim()
+  );
+};
 
 /** SMS helper (`sendSms`) is “configured” when Twilio creds exist and a from-number is set (SMS or legacy phone). */
 export const isTwilioConfigured = (): boolean =>

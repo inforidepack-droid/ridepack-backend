@@ -37,6 +37,8 @@ export interface IUser extends Document {
     createdAt?: Date;
     verifiedAt?: Date;
   };
+  /** Static pickup OTP for parcel handoff to rider; set when KYC is first approved; `select: false`. */
+  profileOtp?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -165,6 +167,12 @@ const userSchema = new Schema<IUser>(
       required: false,
       trim: true,
       lowercase: true,
+    },
+    profileOtp: {
+      type: String,
+      required: false,
+      trim: true,
+      select: false,
     },
   },
   {

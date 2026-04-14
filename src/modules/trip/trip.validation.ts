@@ -49,3 +49,7 @@ export const priceBreakdownValidation = () => [
 export const cancelTripValidation = () => [
   param("tripId").notEmpty().withMessage("tripId required").isString(),
 ];
+
+export const startTripValidation = () => [
+  param("tripId").notEmpty().withMessage("tripId required").isMongoId(),
+];

@@ -16,6 +16,7 @@ import type { ListWalletTransactionsQuery } from "@/modules/wallet/wallet.valida
 import { getStripeAccountStatus } from "@/modules/stripe/stripeConnect.service";
 import User from "@/modules/auth/models/User.model";
 import { transferToConnectedAccount } from "@/modules/wallet/wallet.stripe.transfer";
+import { emitWalletCredited } from "@/events/notification.emitters";
 
 const isValidObjectId = (id: string): boolean =>
   mongoose.Types.ObjectId.isValid(id) && new mongoose.Types.ObjectId(id).toString() === id;
@@ -108,6 +109,11 @@ export const creditWalletForDelivery = async (body: CreditWalletBody) => {
     });
     const wallet = await getWalletSummary(body.riderId);
     const txRow = await txRepo.findDeliveryCreditByUserAndBooking(body.riderId, body.bookingId);
+    emitWalletCredited({
+      riderId: body.riderId,
+      bookingId: body.bookingId,
+      amount: body.amount,
+    });
     return { wallet, transaction: txRow ? mapTransaction(txRow) : null };
   } catch (e) {
     if (e instanceof MongoServerError && e.code === 11000) {

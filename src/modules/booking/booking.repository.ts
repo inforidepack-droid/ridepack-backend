@@ -3,6 +3,7 @@ import Booking, { IBooking } from "@/modules/booking/booking.model";
 import Trip from "@/modules/trip/trip.model";
 import { BOOKING_STATUS } from "@/modules/booking/booking.constants";
 import { TRIP_STATUS } from "@/modules/trip/trip.constants";
+import { PARCEL_OTP_MAX_ATTEMPTS } from "@/modules/booking/booking.parcelOtp.constants";
 
 export type BookingLean = Omit<IBooking, keyof mongoose.Document> & {
   _id: mongoose.Types.ObjectId;
@@ -17,6 +18,7 @@ export type CreateBookingInput = {
   packageImages: string[];
   agreedPrice: number;
   illegalItemsDeclaration: boolean;
+  deliveryOtp: string;
 };
 
 export const create = (data: CreateBookingInput): Promise<BookingLean> =>
@@ -29,6 +31,124 @@ export const create = (data: CreateBookingInput): Promise<BookingLean> =>
 
 export const findById = (bookingId: string): Promise<BookingLean | null> =>
   Booking.findById(bookingId).lean().exec() as Promise<BookingLean | null>;
+
+export const deleteById = (bookingId: string): Promise<void> =>
+  Booking.findByIdAndDelete(bookingId)
+    .exec()
+    .then(() => undefined);
+
+export type BookingTripRiderForOtpLean = Omit<BookingLean, "tripId"> & {
+  tripId: { _id: mongoose.Types.ObjectId; riderId: mongoose.Types.ObjectId; status?: string } | null;
+  deliveryOtp?: string;
+};
+
+/** Backfills missing OTP subdocs on legacy booking documents (Mongo pipeline update). */
+export const mergeMissingParcelOtpFields = async (bookingId: string): Promise<void> => {
+  await Booking.updateOne(
+    { _id: new mongoose.Types.ObjectId(bookingId) },
+    [
+      {
+        $set: {
+          otpAttempts: {
+            pickup: { $ifNull: ["$otpAttempts.pickup", 0] },
+            delivery: { $ifNull: ["$otpAttempts.delivery", 0] },
+          },
+          otpVerification: {
+            pickupVerified: { $ifNull: ["$otpVerification.pickupVerified", false] },
+            deliveryVerified: { $ifNull: ["$otpVerification.deliveryVerified", false] },
+          },
+        },
+      },
+    ]
+  ).exec();
+};
+
+export const findByIdWithTripForParcelOtp = (
+  bookingId: string
+): Promise<BookingTripRiderForOtpLean | null> =>
+  Booking.findById(bookingId)
+    .select("+deliveryOtp")
+    .populate({ path: "tripId", select: "riderId status" })
+    .lean()
+    .exec() as Promise<BookingTripRiderForOtpLean | null>;
+
+export const incrementPickupOtpAttempt = async (
+  bookingId: string
+): Promise<{ attempts: number } | null> => {
+  const r = await Booking.findOneAndUpdate(
+    { _id: bookingId, "otpAttempts.pickup": { $lt: PARCEL_OTP_MAX_ATTEMPTS } },
+    { $inc: { "otpAttempts.pickup": 1 } },
+    { new: true }
+  )
+    .select("otpAttempts.pickup")
+    .lean()
+    .exec();
+  if (!r) return null;
+  return { attempts: (r as { otpAttempts?: { pickup?: number } }).otpAttempts?.pickup ?? 0 };
+};
+
+export const incrementDeliveryOtpAttempt = async (
+  bookingId: string
+): Promise<{ attempts: number } | null> => {
+  const r = await Booking.findOneAndUpdate(
+    { _id: bookingId, "otpAttempts.delivery": { $lt: PARCEL_OTP_MAX_ATTEMPTS } },
+    { $inc: { "otpAttempts.delivery": 1 } },
+    { new: true }
+  )
+    .select("otpAttempts.delivery")
+    .lean()
+    .exec();
+  if (!r) return null;
+  return { attempts: (r as { otpAttempts?: { delivery?: number } }).otpAttempts?.delivery ?? 0 };
+};
+
+export const finalizePickupVerification = (
+  bookingId: string
+): Promise<BookingLean | null> =>
+  Booking.findOneAndUpdate(
+    {
+      _id: bookingId,
+      status: BOOKING_STATUS.CONFIRMED,
+      $or: [
+        { "otpVerification.pickupVerified": { $exists: false } },
+        { "otpVerification.pickupVerified": false },
+        { "otpVerification.pickupVerified": null },
+      ],
+    },
+    {
+      $set: {
+        "otpVerification.pickupVerified": true,
+        status: BOOKING_STATUS.PICKED_UP,
+      },
+    },
+    { new: true }
+  )
+    .lean()
+    .exec() as Promise<BookingLean | null>;
+
+export const finalizeDeliveryVerification = (
+  bookingId: string
+): Promise<BookingLean | null> =>
+  Booking.findOneAndUpdate(
+    {
+      _id: bookingId,
+      status: BOOKING_STATUS.PICKED_UP,
+      $or: [
+        { "otpVerification.deliveryVerified": { $exists: false } },
+        { "otpVerification.deliveryVerified": false },
+        { "otpVerification.deliveryVerified": null },
+      ],
+    },
+    {
+      $set: {
+        "otpVerification.deliveryVerified": true,
+        status: BOOKING_STATUS.DELIVERED,
+      },
+    },
+    { new: true }
+  )
+    .lean()
+    .exec() as Promise<BookingLean | null>;
 
 export type BookingWithTripRiderLean = Omit<BookingLean, "tripId"> & {
   tripId: { _id: mongoose.Types.ObjectId; riderId: mongoose.Types.ObjectId } | null;

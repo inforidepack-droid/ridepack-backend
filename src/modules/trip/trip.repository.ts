@@ -118,7 +118,7 @@ export const atomicPublish = (
 export const findPublishedByRiderId = (riderId: string): Promise<TripLean[]> =>
   Trip.find({
     riderId: new mongoose.Types.ObjectId(riderId),
-    status: TRIP_STATUS.PUBLISHED,
+    status: { $in: [TRIP_STATUS.PUBLISHED, TRIP_STATUS.IN_PROGRESS] },
   })
     .populate("riderId", "name email profileImage phoneNumber countryCode")
     .sort({ publishedAt: -1, createdAt: -1 })
@@ -138,6 +138,20 @@ export const atomicCancel = (tripId: string, riderId: string): Promise<TripLean 
         isLocked: false,
       },
     },
+    { new: true }
+  )
+    .lean()
+    .exec() as Promise<TripLean | null>;
+
+/** Rider marks a published trip as in progress (journey started). */
+export const atomicStartTrip = (tripId: string, riderId: string): Promise<TripLean | null> =>
+  Trip.findOneAndUpdate(
+    {
+      _id: tripId,
+      riderId: new mongoose.Types.ObjectId(riderId),
+      status: TRIP_STATUS.PUBLISHED,
+    },
+    { $set: { status: TRIP_STATUS.IN_PROGRESS } },
     { new: true }
   )
     .lean()

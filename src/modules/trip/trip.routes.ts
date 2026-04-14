@@ -2,6 +2,7 @@ import { Router } from "express";
 import {
   createDraftTripController,
   publishTripController,
+  startTripController,
   searchTripsController,
   getTripDetailsController,
   getPriceBreakdownController,
@@ -13,6 +14,7 @@ import {
   searchTripsValidation,
   priceBreakdownValidation,
   cancelTripValidation,
+  startTripValidation,
 } from "@/modules/trip/trip.validation";
 import { validate } from "@/middlewares/validation";
 import { authenticate } from "@/middlewares/auth";
@@ -26,6 +28,13 @@ router.get("/:tripId", getTripDetailsController);
 
 router.post("/", authenticate, createDraftValidation(), validate, createDraftTripController);
 router.patch("/:tripId/publish", authenticate, publishTripController);
+router.patch(
+  "/:tripId/start",
+  authenticate,
+  startTripValidation(),
+  validate,
+  startTripController
+);
 router.patch("/:tripId/cancel", authenticate, cancelTripValidation(), validate, cancelTripController);
 
 export default router;
