@@ -15,6 +15,11 @@ import { assertPaymentIntentMatchesBooking } from "@/modules/booking/booking.str
 import { generateOtp } from "@/utils/otp.generate.utils";
 import { sendParcelDeliveryOtpSms } from "@/modules/booking/booking.parcelOtp.twilio";
 import { toPublicBookingLean } from "@/modules/booking/booking.public.utils";
+import {
+  emitBookingCreated,
+  emitPaymentSucceeded,
+  emitRequestAccepted,
+} from "@/events/notification.emitters";
 
 export type CreateBookingBody = {
   tripId: string;
@@ -149,7 +154,12 @@ export const createBooking = async (
     throw createError("Failed to send delivery OTP via SMS", HTTP_STATUS.BAD_GATEWAY);
   }
 
-  return toPublicBookingLean(booking);
+  const publicBooking = toPublicBookingLean(booking);
+  emitBookingCreated({
+    riderId,
+    bookingId: booking._id.toString(),
+  });
+  return publicBooking;
 };
 
 export const acceptBookingRequest = async (
@@ -188,6 +198,8 @@ export const acceptBookingRequest = async (
   if (!updated) {
     throw createError("Failed to accept booking", HTTP_STATUS.INTERNAL_SERVER_ERROR);
   }
+  const senderIdStr = (updated.senderId as unknown as mongoose.Types.ObjectId).toString();
+  emitRequestAccepted({ senderId: senderIdStr, bookingId });
   return updated;
 };
 
@@ -247,6 +259,7 @@ export const payBooking = async (
 
   const updated = await bookingRepository.findById(bookingId);
   if (!updated) throw createError("Booking not found after payment", HTTP_STATUS.INTERNAL_SERVER_ERROR);
+  emitPaymentSucceeded({ senderId, bookingId });
   return updated;
 };
 

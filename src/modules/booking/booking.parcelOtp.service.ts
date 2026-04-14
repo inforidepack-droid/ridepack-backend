@@ -8,6 +8,12 @@ import * as bookingRepository from "@/modules/booking/booking.repository";
 import { PARCEL_OTP_MAX_ATTEMPTS } from "@/modules/booking/booking.parcelOtp.constants";
 import { sendParcelDeliveryOtpSms } from "@/modules/booking/booking.parcelOtp.twilio";
 import type { BookingLean } from "@/modules/booking/booking.repository";
+import {
+  emitDeliveryVerified,
+  emitParcelInTransit,
+  emitPickupVerified,
+} from "@/events/notification.emitters";
+import { findUserIdByPhoneContact } from "@/modules/notifications/userByPhone.lookup";
 
 const tripRiderId = (
   trip: bookingRepository.BookingTripRiderForOtpLean["tripId"]
@@ -92,6 +98,8 @@ export const verifyPickupOtp = async (
   if (!updated) {
     throw createError("Pickup could not be verified (already verified or invalid state)", HTTP_STATUS.BAD_REQUEST);
   }
+  emitPickupVerified({ bookingId, senderId });
+  emitParcelInTransit({ bookingId });
   return updated;
 };
 
@@ -139,6 +147,16 @@ export const verifyDeliveryOtp = async (
       HTTP_STATUS.BAD_REQUEST
     );
   }
+  const senderIdStr = (updated.senderId as unknown as mongoose.Types.ObjectId).toString();
+  const receiverUserId = await findUserIdByPhoneContact({
+    phone: updated.receiverDetails.phone,
+    countryCode: updated.receiverDetails.countryCode,
+  });
+  emitDeliveryVerified({
+    bookingId,
+    senderId: senderIdStr,
+    receiverUserId,
+  });
   return updated;
 };
 

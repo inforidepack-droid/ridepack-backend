@@ -1,4 +1,8 @@
 import { body, param, query } from "express-validator";
+
+export const bookingIdParamValidation = () => [
+  param("id").notEmpty().isMongoId().withMessage("booking id required"),
+];
 import { MIN_PACKAGE_IMAGES } from "@/modules/booking/booking.constants";
 
 export const listMyBookingsValidation = () => [
@@ -72,3 +76,5 @@ export const verifyDeliveryOtpValidation = () => parcelOtpBody();
 export const resendDeliveryOtpValidation = () => [
   body("bookingId").notEmpty().isMongoId().withMessage("bookingId must be a valid id"),
 ];
+
+export const riderArrivalValidation = () => bookingIdParamValidation();

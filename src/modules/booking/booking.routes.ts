@@ -8,6 +8,8 @@ import {
   verifyPickupOtpController,
   verifyDeliveryOtpController,
   resendDeliveryOtpController,
+  riderPickupArrivalController,
+  riderDeliveryArrivalController,
 } from "@/modules/booking/booking.controller";
 import {
   createBookingValidation,
@@ -18,6 +20,7 @@ import {
   verifyPickupOtpValidation,
   verifyDeliveryOtpValidation,
   resendDeliveryOtpValidation,
+  riderArrivalValidation,
 } from "@/modules/booking/booking.validation";
 import { validate } from "@/middlewares/validation";
 import { authenticate } from "@/middlewares/auth";
@@ -55,6 +58,22 @@ router.post(
   resendDeliveryOtpValidation(),
   validate,
   resendDeliveryOtpController
+);
+router.patch(
+  "/:id/pickup-arrival",
+  authenticate,
+  requireRider,
+  riderArrivalValidation(),
+  validate,
+  riderPickupArrivalController
+);
+router.patch(
+  "/:id/delivery-arrival",
+  authenticate,
+  requireRider,
+  riderArrivalValidation(),
+  validate,
+  riderDeliveryArrivalController
 );
 router.post("/:id/accept", authenticate, acceptBookingValidation(), validate, acceptBookingController);
 router.post(

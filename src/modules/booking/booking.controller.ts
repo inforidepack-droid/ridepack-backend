@@ -13,6 +13,10 @@ import {
   verifyDeliveryOtp,
   resendDeliveryOtp,
 } from "@/modules/booking/booking.parcelOtp.service";
+import {
+  riderNotifyPickupArrival,
+  riderNotifyDeliveryArrival,
+} from "@/modules/booking/booking.arrival.service";
 import { createBookingPaymentIntent } from "@/modules/booking/booking.payment.service";
 import type {
   CreateBookingBody,
@@ -94,5 +98,23 @@ export const resendDeliveryOtpController = asyncHandler(
     const { bookingId } = req.body as { bookingId: string };
     await resendDeliveryOtp(req.user.userId, bookingId);
     sendSuccess(res, { data: { ok: true }, message: "Delivery OTP resent to receiver" });
+  }
+);
+
+export const riderPickupArrivalController = asyncHandler(
+  async (req: AuthRequest, res: Response): Promise<void> => {
+    if (!req.user) throw createError("Unauthorized", 401);
+    const bookingId = req.params.id as string;
+    const result = await riderNotifyPickupArrival(bookingId, req.user.userId);
+    sendSuccess(res, { data: result, message: "Pickup arrival notification queued" });
+  }
+);
+
+export const riderDeliveryArrivalController = asyncHandler(
+  async (req: AuthRequest, res: Response): Promise<void> => {
+    if (!req.user) throw createError("Unauthorized", 401);
+    const bookingId = req.params.id as string;
+    const result = await riderNotifyDeliveryArrival(bookingId, req.user.userId);
+    sendSuccess(res, { data: result, message: "Delivery arrival notification queued" });
   }
 );

@@ -7,6 +7,7 @@ import User from "@/modules/auth/models/User.model";
 import { createError } from "@/utils/appError";
 import { HTTP_STATUS } from "@/constants/http.constants";
 import type { ConversationLean, MessageLean } from "@/modules/chat/chat.types";
+import { emitChatMessageReceived } from "@/events/notification.emitters";
 
 const MAX_MESSAGE_LENGTH = 500;
 const DUPLICATE_WINDOW_MS = 5000;
@@ -138,6 +139,14 @@ export const sendMessageForBooking = async (
       riderId: new mongoose.Types.ObjectId(participants.riderId),
     },
   }).exec();
+
+  const recipientUserId =
+    senderUserId === participants.senderId ? participants.riderId : participants.senderId;
+  emitChatMessageReceived({
+    bookingId: participants.bookingId,
+    recipientUserId,
+    preview: cleanMessage,
+  });
 
   return { roomId: participants.bookingId, message };
 };

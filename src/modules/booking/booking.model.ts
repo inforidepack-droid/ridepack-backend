@@ -28,6 +28,9 @@ export interface IBooking extends Document {
   deliveryOtp?: string;
   otpVerification: IOtpVerification;
   otpAttempts: IOtpAttempts;
+  /** Idempotency for rider-driven arrival push events. */
+  pickupArrivalNotified?: boolean;
+  deliveryArrivalNotified?: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -94,6 +97,8 @@ const bookingSchema = new Schema<IBooking>(
       type: otpAttemptsSchema,
       default: () => ({ pickup: 0, delivery: 0 }),
     },
+    pickupArrivalNotified: { type: Boolean, default: false },
+    deliveryArrivalNotified: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

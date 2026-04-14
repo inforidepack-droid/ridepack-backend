@@ -16,6 +16,9 @@ import "@/modules/tracking/riderLocation.model";
 import "@/modules/vehicle/vehicle.model";
 import "@/modules/chat/conversation.model";
 import "@/modules/chat/message.model";
+import "@/modules/notifications/notification.model";
+import "@/modules/notifications/deviceToken.model";
+import { registerNotificationListeners } from "@/events/notification.listeners";
 
 const PORT = process.env.PORT || 3000;
 
@@ -23,6 +26,7 @@ const startServer = async (): Promise<void> => {
   try {
     // Connect to databases
     await connectDB();
+    registerNotificationListeners();
     await connectRedis();
 
     // Create Express app
