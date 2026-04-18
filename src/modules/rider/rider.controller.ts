@@ -38,3 +38,11 @@ export const deleteRiderController = asyncHandler(
     sendSuccess(res, { message: "Rider profile deactivated (user blocked)" });
   }
 );
+
+export const getActiveRideController = asyncHandler(
+  async (req: AuthRequest, res: Response): Promise<void> => {
+    if (!req.user) throw createError("Unauthorized", 401);
+    const booking = await riderService.getActiveRideForRider(req.user.userId);
+    sendSuccess(res, { data: booking });
+  }
+);

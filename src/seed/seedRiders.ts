@@ -24,6 +24,9 @@ const randomInRange = (min: number, max: number): number =>
 const randomPlate = (): string =>
   Array.from({ length: 7 }, () => "ABCDEFGHJKLMNPQRSTUVWXYZ0123456789"[Math.floor(Math.random() * 34)]).join("");
 
+/** Deterministic 5-digit pickup `profileOtp` for seed rider index 1–5 → 51001–51005. */
+const profileOtpForSeedRider = (index: number): string => String(51000 + index);
+
 const run = async (): Promise<void> => {
   try {
     await mongoose.connect(MONGODB_URI as string);
@@ -42,14 +45,18 @@ const run = async (): Promise<void> => {
     }
 
     let successCount = 0;
+    let profileOtpUpdatedCount = 0;
     for (let i = 1; i <= 5; i++) {
       const email = `rider-seed-${i}${SEED_EMAIL_DOMAIN}`;
       const name = `Seed Rider ${i}`;
       const phoneNumber = `+1555000${1000 + i}`;
+      const profileOtp = profileOtpForSeedRider(i);
 
       const existingUser = await User.findOne({ email }).select("_id").lean().exec();
       if (existingUser) {
-        console.log(`Skipping ${email}: user already exists`);
+        await User.updateOne({ _id: existingUser._id }, { $set: { profileOtp } }).exec();
+        profileOtpUpdatedCount++;
+        console.log(`Updated profileOtp for existing seed user ${email} → ${profileOtp}`);
         continue;
       }
 
@@ -63,6 +70,7 @@ const run = async (): Promise<void> => {
         isVerified: true,
         isPhoneVerified: true,
         isBlocked: false,
+        profileOtp,
       });
 
       const existingRider = await Rider.findOne({ userId: user._id }).lean().exec();
@@ -92,7 +100,9 @@ const run = async (): Promise<void> => {
       console.log(`Created rider ${i}: ${email}`);
     }
 
-    console.log(`Seeder finished. Success count: ${successCount}`);
+    console.log(
+      `Seeder finished. Created: ${successCount}, existing users profileOtp set (5-digit): ${profileOtpUpdatedCount}`
+    );
   } catch (err) {
     console.error("Seed error:", err);
     process.exit(1);

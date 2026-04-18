@@ -17,6 +17,7 @@ export interface UserLike {
   /** String, or legacy embedded object from older documents. */
   address?: string | Record<string, unknown> | null;
   verification?: { status?: string | null } | null;
+  profileOtp?: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -60,6 +61,7 @@ export const toAuthUserResponse = (user: UserLike): AuthUserResponse => ({
   isVerified: user.isVerified ?? false,
   idVerificationStatus: user.verification?.status ?? "not_started",
   role: user.role ?? "user",
+  profileOtp: user.profileOtp ?? "",
   createdAt: user.createdAt,
   updatedAt: user.updatedAt,
 });

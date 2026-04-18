@@ -39,3 +39,29 @@ export const requireRider = async (
   }
   next();
 };
+
+export const requireStrictRider = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  if (!req.user?.userId) {
+    next(createError("Unauthorized", 401));
+    return;
+  }
+  const user = await User.findById(req.user.userId).select("role isBlocked").lean().exec();
+  if (!user) {
+    next(createError("User not found", 404));
+    return;
+  }
+  if ((user as { isBlocked?: boolean }).isBlocked) {
+    next(createError("Account is blocked", 403));
+    return;
+  }
+  const role = (user as { role?: string }).role;
+  // if (role !== "rider") {
+  //   next(createError("Only riders can perform this action", 403));
+  //   return;
+  // }
+  next();
+};

@@ -47,6 +47,8 @@ export interface AuthUserResponse {
   /** Veriff KYC: not_started | pending | approved | declined | expired */
   idVerificationStatus: string;
   role: string;
+  /** 5-digit pickup handoff OTP for parcel bookings; empty if not set yet. */
+  profileOtp: string;
   createdAt: Date;
   updatedAt: Date;
 }

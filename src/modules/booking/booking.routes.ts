@@ -5,6 +5,7 @@ import {
   createBookingPaymentIntentController,
   payBookingController,
   listMyBookingsController,
+  listRiderCompletedBookingsController,
   verifyPickupOtpController,
   verifyDeliveryOtpController,
   resendDeliveryOtpController,
@@ -17,6 +18,7 @@ import {
   createBookingPaymentIntentValidation,
   payBookingValidation,
   listMyBookingsValidation,
+  riderCompletedBookingsValidation,
   verifyPickupOtpValidation,
   verifyDeliveryOtpValidation,
   resendDeliveryOtpValidation,
@@ -24,10 +26,18 @@ import {
 } from "@/modules/booking/booking.validation";
 import { validate } from "@/middlewares/validation";
 import { authenticate } from "@/middlewares/auth";
-import { requireRider } from "@/modules/rider/rider.middleware";
+import { requireRider, requireStrictRider } from "@/modules/rider/rider.middleware";
 
 const router = Router();
 
+router.get(
+  "/rider/completed",
+  authenticate,
+  requireStrictRider,
+  riderCompletedBookingsValidation(),
+  validate,
+  listRiderCompletedBookingsController
+);
 router.get(
   "/",
   authenticate,

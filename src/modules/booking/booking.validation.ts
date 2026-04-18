@@ -1,9 +1,9 @@
 import { body, param, query } from "express-validator";
+import { MIN_PACKAGE_IMAGES } from "@/modules/booking/booking.constants";
 
 export const bookingIdParamValidation = () => [
   param("id").notEmpty().isMongoId().withMessage("booking id required"),
 ];
-import { MIN_PACKAGE_IMAGES } from "@/modules/booking/booking.constants";
 
 export const listMyBookingsValidation = () => [
   query("status")
@@ -12,6 +12,8 @@ export const listMyBookingsValidation = () => [
     .isIn(["live", "completed"])
     .withMessage("status must be 'live' or 'completed'"),
 ];
+
+export const riderCompletedBookingsValidation = () => [];
 
 const contactValidator = (prefix: string, countryOptional = false) => [
   body(`${prefix}.name`).notEmpty().trim().withMessage(`${prefix}.name required`),
@@ -61,17 +63,25 @@ export const payBookingValidation = () => [
   body("paymentIntentId").optional().isString(),
 ];
 
-const parcelOtpBody = () => [
+const verifyPickupOtpBody = () => [
   body("bookingId").notEmpty().isMongoId().withMessage("bookingId must be a valid id"),
   body("otp")
     .notEmpty()
-    .matches(/^\d{4}$/)
-    .withMessage("otp must be exactly 4 digits"),
+    .matches(/^\d{5}$/)
+    .withMessage("otp must be exactly 5 digits"),
 ];
 
-export const verifyPickupOtpValidation = () => parcelOtpBody();
+const verifyDeliveryOtpBody = () => [
+  body("bookingId").notEmpty().isMongoId().withMessage("bookingId must be a valid id"),
+  body("otp")
+    .notEmpty()
+    .matches(/^\d{5}$/)
+    .withMessage("otp must be exactly 5 digits"),
+];
 
-export const verifyDeliveryOtpValidation = () => parcelOtpBody();
+export const verifyPickupOtpValidation = () => verifyPickupOtpBody();
+
+export const verifyDeliveryOtpValidation = () => verifyDeliveryOtpBody();
 
 export const resendDeliveryOtpValidation = () => [
   body("bookingId").notEmpty().isMongoId().withMessage("bookingId must be a valid id"),

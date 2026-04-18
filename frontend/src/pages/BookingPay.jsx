@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from "react";
+import { Elements } from "@stripe/react-stripe-js";
 import { useStripe } from "@stripe/react-stripe-js";
 import api, { getApiErrorMessage } from "../api/api.js";
+import { stripePromise } from "../stripeClient.js";
 
-const BookingPay = () => {
+const BookingPayInner = () => {
   const stripe = useStripe();
   const [bookingId, setBookingId] = useState("");
   const [methods, setMethods] = useState([]);
@@ -157,6 +159,24 @@ const BookingPay = () => {
         </div>
       </div>
     </section>
+  );
+};
+
+const BookingPay = () => {
+  if (!stripePromise) {
+    return (
+      <section aria-label="Pay for a booking">
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+          Set <code className="font-mono">VITE_STRIPE_PUBLISHABLE_KEY</code> in the frontend{" "}
+          <code className="font-mono">.env</code> to test booking payment with Stripe.
+        </div>
+      </section>
+    );
+  }
+  return (
+    <Elements stripe={stripePromise}>
+      <BookingPayInner />
+    </Elements>
   );
 };
 

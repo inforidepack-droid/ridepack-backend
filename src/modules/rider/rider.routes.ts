@@ -4,9 +4,14 @@ import {
   getRiderController,
   updateRiderController,
   deleteRiderController,
+  getActiveRideController,
 } from "@/modules/rider/rider.controller";
-import { createRiderValidation, updateRiderValidation } from "@/modules/rider/rider.validation";
-import { requireRider } from "@/modules/rider/rider.middleware";
+import {
+  createRiderValidation,
+  updateRiderValidation,
+  activeRideValidation,
+} from "@/modules/rider/rider.validation";
+import { requireRider, requireStrictRider } from "@/modules/rider/rider.middleware";
 import { validate } from "@/middlewares/validation";
 import { authenticate } from "@/middlewares/auth";
 
@@ -19,6 +24,15 @@ router.post(
   createRiderValidation(),
   validate,
   createRiderController
+);
+
+router.get(
+  "/active-ride",
+  authenticate,
+  requireStrictRider,
+  activeRideValidation(),
+  validate,
+  getActiveRideController
 );
 
 router.get("/:id", getRiderController);

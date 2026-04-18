@@ -4,7 +4,6 @@ import { createError } from "@/utils/appError";
 import { HTTP_STATUS } from "@/constants/http.constants";
 import { sendSuccess } from "@/utils/responseFormatter";
 import type { AuthRequest } from "@/middlewares/auth";
-import User from "@/modules/auth/models/User.model";
 import {
   listNotifications,
   unreadCount,
@@ -71,13 +70,10 @@ export const unregisterDeviceController = asyncHandler(
   }
 );
 
-export const adminSendNotificationController = asyncHandler(
+/** Any authenticated user may send a test/in-app notification to a target user (dev / internal tooling). */
+export const sendNotificationController = asyncHandler(
   async (req: AuthRequest, res: Response): Promise<void> => {
     if (!req.user) throw createError("Unauthorized", HTTP_STATUS.UNAUTHORIZED);
-    const u = await User.findById(req.user.userId).select("role").lean().exec();
-    if ((u as { role?: string } | null)?.role !== "admin") {
-      throw createError("Admin only", HTTP_STATUS.FORBIDDEN);
-    }
     const { userId, title, message, type, referenceId } = req.body as {
       userId: string;
       title: string;

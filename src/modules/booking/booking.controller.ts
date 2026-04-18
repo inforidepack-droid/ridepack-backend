@@ -7,6 +7,7 @@ import {
   acceptBookingRequest,
   payBooking,
   listMyBookings,
+  listRiderCompletedBookings,
 } from "@/modules/booking/booking.service";
 import {
   verifyPickupOtp,
@@ -24,6 +25,8 @@ import type {
   MyBookingsStatusFilter,
 } from "@/modules/booking/booking.service";
 import { AuthRequest } from "@/middlewares/auth";
+import { toPublicBookingLean } from "@/modules/booking/booking.public.utils";
+import type { VerifyParcelOtpBody } from "@/modules/booking/booking.parcelOtp.types";
 
 export const createBookingController = asyncHandler(
   async (req: AuthRequest, res: Response): Promise<void> => {
@@ -74,21 +77,35 @@ export const listMyBookingsController = asyncHandler(
   }
 );
 
+export const listRiderCompletedBookingsController = asyncHandler(
+  async (req: AuthRequest, res: Response): Promise<void> => {
+    if (!req.user) throw createError("Unauthorized", 401);
+    const bookings = await listRiderCompletedBookings(req.user.userId);
+    sendSuccess(res, { data: { bookings } });
+  }
+);
+
 export const verifyPickupOtpController = asyncHandler(
   async (req: AuthRequest, res: Response): Promise<void> => {
     if (!req.user) throw createError("Unauthorized", 401);
-    const { bookingId, otp } = req.body as { bookingId: string; otp: string };
+    const { bookingId, otp } = req.body as VerifyParcelOtpBody;
     const booking = await verifyPickupOtp(req.user.userId, bookingId, otp);
-    sendSuccess(res, { data: { booking }, message: "Pickup verified" });
+    sendSuccess(res, {
+      data: { booking: toPublicBookingLean(booking) },
+      message: "Pickup verified",
+    });
   }
 );
 
 export const verifyDeliveryOtpController = asyncHandler(
   async (req: AuthRequest, res: Response): Promise<void> => {
     if (!req.user) throw createError("Unauthorized", 401);
-    const { bookingId, otp } = req.body as { bookingId: string; otp: string };
+    const { bookingId, otp } = req.body as VerifyParcelOtpBody;
     const booking = await verifyDeliveryOtp(req.user.userId, bookingId, otp);
-    sendSuccess(res, { data: { booking }, message: "Delivery verified" });
+    sendSuccess(res, {
+      data: { booking: toPublicBookingLean(booking) },
+      message: "Delivery verified",
+    });
   }
 );
 

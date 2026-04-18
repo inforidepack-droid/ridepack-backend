@@ -28,3 +28,5 @@ export const updateRiderValidation = () => [
   body("vehicleDetails.color").optional().isString().trim(),
   body("vehicleDetails.plateNumber").optional().isString().trim(),
 ];
+
+export const activeRideValidation = () => [];

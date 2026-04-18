@@ -3,6 +3,7 @@ import { generateTokenWithExpiry, type TokenPayload } from "@/utils/token.util";
 import { toGoogleAuthUserResponse } from "@/modules/auth/auth.utils";
 import { verifyGoogleIdToken } from "@/modules/auth/googleAuth.helper";
 import * as authRepository from "@/modules/auth/auth.repository";
+import { ensureProfileOtpIfMissing } from "@/modules/user/user.profileOtp.utils";
 import type { GoogleAuthResponse } from "@/modules/auth/auth.types";
 
 const JWT_EXPIRY_DAYS = "7d";
@@ -61,6 +62,7 @@ export const googleLogin = async (idToken: string): Promise<GoogleAuthResponse> 
   }
 
   const userId = user._id.toString();
+  await ensureProfileOtpIfMissing(userId);
   const tokenPayload: TokenPayload = {
     userId,
     email: user.email ?? undefined,
