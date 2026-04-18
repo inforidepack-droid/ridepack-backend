@@ -2,8 +2,10 @@ import mongoose from "mongoose";
 import { createError } from "@/utils/appError";
 import { HTTP_STATUS } from "@/constants/http.constants";
 import * as riderRepository from "@/modules/rider/rider.repository";
+import * as bookingRepository from "@/modules/booking/booking.repository";
 import User from "@/modules/auth/models/User.model";
 import { VEHICLE_TYPE } from "@/modules/rider/rider.constants";
+import { BOOKING_STATUS } from "@/modules/booking/booking.constants";
 
 const isValidObjectId = (id: string): boolean => mongoose.Types.ObjectId.isValid(id) && new mongoose.Types.ObjectId(id).toString() === id;
 
@@ -117,3 +119,18 @@ export const softDeleteRider = async (id: string, userId: string): Promise<void>
   }
   await User.findByIdAndUpdate(riderUserId, { $set: { isBlocked: true } }).exec();
 }
+
+const ACTIVE_RIDE_BOOKING_STATUSES = [BOOKING_STATUS.CONFIRMED, BOOKING_STATUS.PICKED_UP];
+
+export const getActiveRideForRider = async (
+  riderId: string
+): Promise<bookingRepository.RiderActiveBookingLean> => {
+  const activeRide = await bookingRepository.findLatestActiveByRiderId(
+    riderId,
+    ACTIVE_RIDE_BOOKING_STATUSES
+  );
+  if (!activeRide) {
+    throw createError("No active ride found", HTTP_STATUS.NOT_FOUND);
+  }
+  return activeRide;
+};

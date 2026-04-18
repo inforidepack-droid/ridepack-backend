@@ -6,7 +6,7 @@ import type { UpdateProfileBody } from "@/modules/user/user.types";
 import { buildIdentityPatch } from "@/modules/user/user.profile.utils";
 
 export const getById = async (id: string) => {
-  const user = await userRepository.findById(id);
+  const user = await userRepository.findByIdWithProfileOtp(id);
   if (!user) throw createError("User not found", HTTP_STATUS.NOT_FOUND);
   return user;
 };
@@ -66,10 +66,12 @@ export const updateProfile = async (userId: string, data: UpdateProfileBody) => 
   }
 
   if (Object.keys(patch).length === 0) {
-    return current;
+    const self = await userRepository.findByIdWithProfileOtp(userId);
+    return self ?? current;
   }
 
   const updated = await userRepository.updateById(userId, patch);
   if (!updated) throw createError("User not found", HTTP_STATUS.NOT_FOUND);
-  return updated;
+  const self = await userRepository.findByIdWithProfileOtp(userId);
+  return self ?? updated;
 };

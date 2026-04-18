@@ -10,6 +10,8 @@ import { sendLoginOtpWhatsApp } from "@/modules/auth/otp.twilio.delivery";
 import { generateOtp } from "@/utils/otpGenerator";
 import { env, isTwilioConfigured, isTwilioWhatsAppOtpConfigured } from "@/config/env.config";
 import { buildFcmPatch } from "@/modules/user/user.profile.utils";
+import { ensureProfileOtpIfMissing } from "@/modules/user/user.profileOtp.utils";
+import * as userRepository from "@/modules/user/user.repository";
 import { sendSms } from "@/services/sms/sms.service";
 import { logger } from "@/config/logger";
 import { HTTP_STATUS } from "@/constants/http.constants";
@@ -103,6 +105,8 @@ const issueTokensForPhoneUser = async (
   }
 
   const userId = user._id.toString();
+  await ensureProfileOtpIfMissing(userId);
+  const userWithOtp = await userRepository.findByIdWithProfileOtp(userId);
   const payload: TokenPayload = {
     userId,
     phoneNumber: user.phoneNumber ?? undefined,
@@ -112,7 +116,7 @@ const issueTokensForPhoneUser = async (
   const refreshToken = generateRefreshToken(payload);
   await authRepository.setRefreshToken(userId, refreshToken, 7 * 24 * 60 * 60);
 
-  const userData = toAuthUserResponse(user);
+  const userData = toAuthUserResponse(userWithOtp ?? user);
 
   return {
     success: true,

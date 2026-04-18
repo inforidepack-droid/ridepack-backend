@@ -8,13 +8,13 @@ import {
   markAllReadController,
   registerDeviceController,
   unregisterDeviceController,
-  adminSendNotificationController,
+  sendNotificationController,
 } from "@/modules/notifications/notification.controller";
 import {
   listNotificationsValidation,
   notificationIdValidation,
   registerDeviceValidation,
-  adminSendNotificationValidation,
+  sendNotificationValidation,
 } from "@/modules/notifications/notification.validation";
 import { body } from "express-validator";
 
@@ -35,9 +35,9 @@ router.post(
 );
 router.post(
   "/send",
-  adminSendNotificationValidation(),
+  sendNotificationValidation(),
   validate,
-  adminSendNotificationController
+  sendNotificationController
 );
 
 export default router;

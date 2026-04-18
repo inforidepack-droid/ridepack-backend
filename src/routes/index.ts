@@ -24,6 +24,7 @@ const router = Router();
 
 router.use("/user", userRoutes);
 router.use("/riders", riderRoutes);
+router.use("/rider", riderRoutes);
 router.use("/auth", authRoutes);
 router.use("/ride", rideRoutes);
 router.use("/upload", uploadRoutes);

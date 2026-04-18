@@ -37,7 +37,7 @@ export interface IUser extends Document {
     createdAt?: Date;
     verifiedAt?: Date;
   };
-  /** Static pickup OTP for parcel handoff to rider; set when KYC is first approved; `select: false`. */
+  /** Static 5-digit pickup OTP for parcel handoff to rider; set when KYC is first approved; `select: false`. */
   profileOtp?: string;
   createdAt: Date;
   updatedAt: Date;

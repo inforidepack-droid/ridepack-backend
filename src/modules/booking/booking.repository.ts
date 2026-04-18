@@ -75,8 +75,9 @@ export const findByIdWithTripForParcelOtp = (
 export const incrementPickupOtpAttempt = async (
   bookingId: string
 ): Promise<{ attempts: number } | null> => {
+  const id = new mongoose.Types.ObjectId(bookingId);
   const r = await Booking.findOneAndUpdate(
-    { _id: bookingId, "otpAttempts.pickup": { $lt: PARCEL_OTP_MAX_ATTEMPTS } },
+    { _id: id, "otpAttempts.pickup": { $lt: PARCEL_OTP_MAX_ATTEMPTS } },
     { $inc: { "otpAttempts.pickup": 1 } },
     { new: true }
   )
@@ -90,8 +91,9 @@ export const incrementPickupOtpAttempt = async (
 export const incrementDeliveryOtpAttempt = async (
   bookingId: string
 ): Promise<{ attempts: number } | null> => {
+  const id = new mongoose.Types.ObjectId(bookingId);
   const r = await Booking.findOneAndUpdate(
-    { _id: bookingId, "otpAttempts.delivery": { $lt: PARCEL_OTP_MAX_ATTEMPTS } },
+    { _id: id, "otpAttempts.delivery": { $lt: PARCEL_OTP_MAX_ATTEMPTS } },
     { $inc: { "otpAttempts.delivery": 1 } },
     { new: true }
   )
@@ -107,7 +109,7 @@ export const finalizePickupVerification = (
 ): Promise<BookingLean | null> =>
   Booking.findOneAndUpdate(
     {
-      _id: bookingId,
+      _id: new mongoose.Types.ObjectId(bookingId),
       status: BOOKING_STATUS.CONFIRMED,
       $or: [
         { "otpVerification.pickupVerified": { $exists: false } },
@@ -131,7 +133,7 @@ export const finalizeDeliveryVerification = (
 ): Promise<BookingLean | null> =>
   Booking.findOneAndUpdate(
     {
-      _id: bookingId,
+      _id: new mongoose.Types.ObjectId(bookingId),
       status: BOOKING_STATUS.PICKED_UP,
       $or: [
         { "otpVerification.deliveryVerified": { $exists: false } },
@@ -185,7 +187,7 @@ export const updateStatus = (
     .lean()
     .exec() as Promise<BookingLean | null>;
 
-export const findBySenderIdAndStatuses = (
+export const  findBySenderIdAndStatuses = (
   senderId: string,
   statuses: string[]
 ): Promise<BookingLean[]> =>
@@ -197,6 +199,88 @@ export const findBySenderIdAndStatuses = (
     .populate("tripId", "fromLocation toLocation travelDate departureTime arrivalTime riderId")
     .lean()
     .exec() as Promise<BookingLean[]>;
+
+export type RiderActiveBookingLean = Omit<BookingLean, "tripId" | "senderId"> & {
+  tripId:
+    | {
+        _id: mongoose.Types.ObjectId;
+        riderId: mongoose.Types.ObjectId;
+        fromLocation?: unknown;
+        toLocation?: unknown;
+        travelDate?: Date;
+        departureTime?: string;
+        arrivalTime?: string;
+        status?: string;
+      }
+    | null;
+  senderId:
+    | {
+        _id: mongoose.Types.ObjectId;
+        name?: string;
+        email?: string;
+        phoneNumber?: string;
+        countryCode?: string;
+        profileImage?: string;
+      }
+    | mongoose.Types.ObjectId;
+};
+
+export const findLatestActiveByRiderId = async (
+  riderId: string,
+  statuses: string[]
+): Promise<RiderActiveBookingLean | null> => {
+  const riderObjectId = new mongoose.Types.ObjectId(riderId);
+  const tripIds = await Trip.find({ riderId: riderObjectId }).select("_id").lean().exec();
+  if (tripIds.length === 0) return null;
+
+  const booking = await Booking.findOne({
+    tripId: {
+      $in: tripIds.map((t) => t._id as mongoose.Types.ObjectId),
+    },
+    status: { $in: statuses },
+  })
+    .sort({ createdAt: -1 })
+    .populate({
+      path: "tripId",
+      select: "riderId fromLocation toLocation travelDate departureTime arrivalTime status",
+    })
+    .populate({
+      path: "senderId",
+      select: "name email phoneNumber countryCode profileImage",
+    })
+    .lean()
+    .exec();
+
+  return (booking as RiderActiveBookingLean | null) ?? null;
+};
+
+/** Delivered bookings for trips owned by this rider (`trip.riderId`). */
+export const findDeliveredByTripRiderId = async (
+  riderId: string
+): Promise<RiderActiveBookingLean[]> => {
+  const riderObjectId = new mongoose.Types.ObjectId(riderId);
+  const trips = await Trip.find({ riderId: riderObjectId }).select("_id").lean().exec();
+  if (trips.length === 0) return [];
+
+  const tripIds = trips.map((t) => t._id as mongoose.Types.ObjectId);
+  const rows = await Booking.find({
+    tripId: { $in: tripIds },
+    status: BOOKING_STATUS.DELIVERED,
+  })
+    .sort({ createdAt: -1 })
+    .populate({
+      path: "tripId",
+      select: "riderId fromLocation toLocation travelDate departureTime arrivalTime status",
+    })
+    .populate({
+      path: "senderId",
+      select: "name email phoneNumber countryCode profileImage",
+    })
+    .lean()
+    .exec();
+
+  return (rows as unknown as RiderActiveBookingLean[]) ?? [];
+};
 
 export type BookingRequestLean = BookingLean & {
   senderId?: { _id: mongoose.Types.ObjectId; name?: string; email?: string; phoneNumber?: string; countryCode?: string };

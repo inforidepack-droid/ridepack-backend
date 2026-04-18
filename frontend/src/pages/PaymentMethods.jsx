@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
+import { Elements } from "@stripe/react-stripe-js";
 import api, { getApiErrorMessage } from "../api/api.js";
 import CardForm from "../components/CardForm.jsx";
+import { stripePromise } from "../stripeClient.js";
 
 const PaymentMethods = () => {
   const [cards, setCards] = useState([]);
@@ -76,7 +78,8 @@ const PaymentMethods = () => {
               <code className="font-mono text-xs bg-slate-100 px-1 py-0.5 rounded">
                 ridepack_token
               </code>
-              .
+              . Adding a card requires{" "}
+              <code className="font-mono text-xs">VITE_STRIPE_PUBLISHABLE_KEY</code>.
             </p>
           </div>
           <button
@@ -87,7 +90,8 @@ const PaymentMethods = () => {
                 handleAddCardClick();
               }
             }}
-            className="px-3 py-1.5 rounded-md text-sm font-medium bg-sky-600 text-white hover:bg-sky-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
+            disabled={!stripePromise}
+            className="px-3 py-1.5 rounded-md text-sm font-medium bg-sky-600 text-white hover:bg-sky-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 disabled:cursor-not-allowed disabled:opacity-50"
             aria-label="Add a new card"
           >
             Add Card
@@ -138,8 +142,16 @@ const PaymentMethods = () => {
         )}
       </div>
 
-      {isAddingCard ? (
-        <CardForm onSuccess={handleCardSaved} onCancel={handleCancelAddCard} />
+      {isAddingCard && stripePromise ? (
+        <Elements stripe={stripePromise}>
+          <CardForm onSuccess={handleCardSaved} onCancel={handleCancelAddCard} />
+        </Elements>
+      ) : null}
+      {isAddingCard && !stripePromise ? (
+        <p className="mt-3 text-sm text-amber-800" role="status">
+          Set <code className="font-mono">VITE_STRIPE_PUBLISHABLE_KEY</code> in the frontend{" "}
+          <code className="font-mono">.env</code> to add cards.
+        </p>
       ) : null}
     </section>
   );

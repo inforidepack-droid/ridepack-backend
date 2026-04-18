@@ -10,7 +10,8 @@
     "lint:fix": "eslint src --ext .ts --fix",
     "format": "prettier --write \"src/**/*.ts\"",
     "prepare": "husky install",
-    "seed:riders": "ts-node -r tsconfig-paths/register src/seed/seedRiders.ts"
+    "seed:riders": "ts-node -r tsconfig-paths/register src/seed/seedRiders.ts",
+    "profile-otp:backfill": "ts-node -r tsconfig-paths/register src/scripts/backfillProfileOtp.ts"
   },
   "keywords": [
     "nodejs",

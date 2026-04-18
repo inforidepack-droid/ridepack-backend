@@ -5,9 +5,17 @@ import User from "@/modules/auth/models/User.model";
 import { generateOtp } from "@/utils/otp.generate.utils";
 import { BOOKING_STATUS } from "@/modules/booking/booking.constants";
 import * as bookingRepository from "@/modules/booking/booking.repository";
-import { PARCEL_OTP_MAX_ATTEMPTS } from "@/modules/booking/booking.parcelOtp.constants";
+import { env } from "@/config/env.config";
+import {
+  DEV_STATIC_DELIVERY_OTP,
+  PARCEL_OTP_MAX_ATTEMPTS,
+} from "@/modules/booking/booking.parcelOtp.constants";
 import { sendParcelDeliveryOtpSms } from "@/modules/booking/booking.parcelOtp.twilio";
 import type { BookingLean } from "@/modules/booking/booking.repository";
+import {
+  assertDeliveryOtpBookingStatus,
+  assertPickupOtpBookingStatus,
+} from "@/modules/booking/booking.parcelOtp.guards";
 import {
   emitDeliveryVerified,
   emitParcelInTransit,
@@ -34,24 +42,20 @@ const assertRiderOwnsTrip = (
   }
 };
 
-const assertNotCancelled = (status: string): void => {
-  if (status === BOOKING_STATUS.CANCELLED) {
-    throw createError("Booking is cancelled", HTTP_STATUS.BAD_REQUEST);
-  }
-  if (status === BOOKING_STATUS.DISPUTED) {
-    throw createError("Booking is in dispute; OTP verification is blocked", HTTP_STATUS.BAD_REQUEST);
-  }
+const loadBookingForOtp = async (
+  bookingId: string
+): Promise<bookingRepository.BookingTripRiderForOtpLean> => {
+  let booking = await bookingRepository.findByIdWithTripForParcelOtp(bookingId);
+  if (!booking) throw createError("Booking not found", HTTP_STATUS.NOT_FOUND);
+  await bookingRepository.mergeMissingParcelOtpFields(bookingId);
+  booking = await bookingRepository.findByIdWithTripForParcelOtp(bookingId);
+  if (!booking) throw createError("Booking not found", HTTP_STATUS.NOT_FOUND);
+  return booking;
 };
 
 const ensureSenderProfilePickupOtp = async (senderId: string): Promise<string> => {
-  const u = await User.findById(senderId).select("+profileOtp isVerified").lean().exec();
+  const u = await User.findById(senderId).select("+profileOtp").lean().exec();
   if (!u) throw createError("Sender not found", HTTP_STATUS.NOT_FOUND);
-  if (!(u as { isVerified?: boolean }).isVerified) {
-    throw createError(
-      "Sender must complete identity verification before pickup verification",
-      HTTP_STATUS.FORBIDDEN
-    );
-  }
   const existing = (u as { profileOtp?: string }).profileOtp;
   if (existing) return existing;
   const otp = generateOtp();
@@ -64,22 +68,12 @@ export const verifyPickupOtp = async (
   bookingId: string,
   otp: string
 ): Promise<BookingLean> => {
-  let booking = await bookingRepository.findByIdWithTripForParcelOtp(bookingId);
-  if (!booking) throw createError("Booking not found", HTTP_STATUS.NOT_FOUND);
-  await bookingRepository.mergeMissingParcelOtpFields(bookingId);
-  booking = await bookingRepository.findByIdWithTripForParcelOtp(bookingId);
-  if (!booking) throw createError("Booking not found", HTTP_STATUS.NOT_FOUND);
+  const booking = await loadBookingForOtp(bookingId);
   assertRiderOwnsTrip(booking, riderUserId);
-  assertNotCancelled(booking.status);
   if (booking.otpVerification.pickupVerified) {
     throw createError("Pickup already verified", HTTP_STATUS.BAD_REQUEST);
   }
-  if (booking.status !== BOOKING_STATUS.CONFIRMED) {
-    throw createError(
-      "Pickup can only be verified after payment (booking must be confirmed)",
-      HTTP_STATUS.BAD_REQUEST
-    );
-  }
+  assertPickupOtpBookingStatus(booking.status);
   if (booking.otpAttempts.pickup >= PARCEL_OTP_MAX_ATTEMPTS) {
     throw createError("OTP attempt limit exceeded", HTTP_STATUS.TOO_MANY_REQUESTS);
   }
@@ -108,22 +102,15 @@ export const verifyDeliveryOtp = async (
   bookingId: string,
   otp: string
 ): Promise<BookingLean> => {
-  let booking = await bookingRepository.findByIdWithTripForParcelOtp(bookingId);
-  if (!booking) throw createError("Booking not found", HTTP_STATUS.NOT_FOUND);
-  await bookingRepository.mergeMissingParcelOtpFields(bookingId);
-  booking = await bookingRepository.findByIdWithTripForParcelOtp(bookingId);
-  if (!booking) throw createError("Booking not found", HTTP_STATUS.NOT_FOUND);
+  const booking = await loadBookingForOtp(bookingId);
   assertRiderOwnsTrip(booking, riderUserId);
-  assertNotCancelled(booking.status);
   if (!booking.otpVerification.pickupVerified) {
     throw createError("Pickup must be verified before delivery OTP", HTTP_STATUS.BAD_REQUEST);
   }
   if (booking.otpVerification.deliveryVerified) {
     throw createError("Delivery already verified", HTTP_STATUS.BAD_REQUEST);
   }
-  if (booking.status !== BOOKING_STATUS.PICKED_UP) {
-    throw createError("Booking must be picked up before delivery verification", HTTP_STATUS.BAD_REQUEST);
-  }
+  assertDeliveryOtpBookingStatus(booking.status);
   if (booking.otpAttempts.delivery >= PARCEL_OTP_MAX_ATTEMPTS) {
     throw createError("OTP attempt limit exceeded", HTTP_STATUS.TOO_MANY_REQUESTS);
   }
@@ -164,11 +151,7 @@ export const resendDeliveryOtp = async (
   senderUserId: string,
   bookingId: string
 ): Promise<{ ok: true }> => {
-  let booking = await bookingRepository.findByIdWithTripForParcelOtp(bookingId);
-  if (!booking) throw createError("Booking not found", HTTP_STATUS.NOT_FOUND);
-  await bookingRepository.mergeMissingParcelOtpFields(bookingId);
-  booking = await bookingRepository.findByIdWithTripForParcelOtp(bookingId);
-  if (!booking) throw createError("Booking not found", HTTP_STATUS.NOT_FOUND);
+  const booking = await loadBookingForOtp(bookingId);
   const sid = (booking.senderId as unknown as mongoose.Types.ObjectId).toString();
   if (sid !== senderUserId) {
     throw createError("Only the booking sender can resend the delivery OTP", HTTP_STATUS.FORBIDDEN);
@@ -178,6 +161,9 @@ export const resendDeliveryOtp = async (
   }
   if (booking.status === BOOKING_STATUS.CANCELLED) {
     throw createError("Booking is cancelled", HTTP_STATUS.BAD_REQUEST);
+  }
+  if (booking.status === BOOKING_STATUS.DISPUTED) {
+    throw createError("Booking is in dispute; cannot resend delivery OTP", HTTP_STATUS.BAD_REQUEST);
   }
   const plain = booking.deliveryOtp;
   if (!plain) {

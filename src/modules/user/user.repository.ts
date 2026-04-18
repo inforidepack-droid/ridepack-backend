@@ -3,6 +3,10 @@ import User, { IUser } from "@/modules/auth/models/User.model";
 
 export const findById = (id: string) => User.findById(id).lean().exec();
 
+/** Self profile: includes pickup `profileOtp` (select:false by default). */
+export const findByIdWithProfileOtp = (id: string) =>
+  User.findById(id).select("+profileOtp").lean().exec();
+
 export const findByEmail = (email: string) => User.findOne({ email }).lean().exec();
 
 export const findByEmailExcludingId = (email: string, excludeUserId: string) =>

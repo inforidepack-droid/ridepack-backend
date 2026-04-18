@@ -12,7 +12,11 @@ import Transaction from "@/modules/booking/transaction.model";
 import { ensureUserVerificationApprovedForBooking } from "@/modules/verification/verification.service";
 import { validateBookingReadyForPayment } from "@/modules/booking/booking.payment.service";
 import { assertPaymentIntentMatchesBooking } from "@/modules/booking/booking.stripe.utils";
-import { generateOtp } from "@/utils/otp.generate.utils";
+import { env } from "@/config/env.config";
+import { generateDeliveryOtp } from "@/utils/otp.generate.utils";
+import {
+  DEV_STATIC_DELIVERY_OTP,
+} from "@/modules/booking/booking.parcelOtp.constants";
 import { sendParcelDeliveryOtpSms } from "@/modules/booking/booking.parcelOtp.twilio";
 import { toPublicBookingLean } from "@/modules/booking/booking.public.utils";
 import {
@@ -121,7 +125,8 @@ export const createBooking = async (
     );
   }
 
-  const deliveryOtp = generateOtp();
+  const deliveryOtp =
+    env.NODE_ENV === "development" ? DEV_STATIC_DELIVERY_OTP : generateDeliveryOtp();
   const booking = await bookingRepository.create({
     tripId,
     senderId,
@@ -134,24 +139,26 @@ export const createBooking = async (
     deliveryOtp,
   });
 
-  try {
-    await sendParcelDeliveryOtpSms(
-      {
-        phone: receiverDetails.phone,
-        countryCode: receiverDetails.countryCode,
-      },
-      deliveryOtp
-    );
-  } catch (e) {
-    await bookingRepository.deleteById(booking._id.toString());
-    const invalid = e instanceof Error && e.message === "INVALID_RECEIVER_PHONE";
-    if (invalid) {
-      throw createError(
-        "Receiver phone is invalid or not supported for SMS (+1 / +91; use E.164 or countryCode + national digits)",
-        HTTP_STATUS.BAD_REQUEST
+  if (env.NODE_ENV !== "development") {
+    try {
+      await sendParcelDeliveryOtpSms(
+        {
+          phone: receiverDetails.phone,
+          countryCode: receiverDetails.countryCode,
+        },
+        deliveryOtp
       );
+    } catch (e) {
+      await bookingRepository.deleteById(booking._id.toString());
+      const invalid = e instanceof Error && e.message === "INVALID_RECEIVER_PHONE";
+      if (invalid) {
+        throw createError(
+          "Receiver phone is invalid or not supported for SMS (+1 / +91; use E.164 or countryCode + national digits)",
+          HTTP_STATUS.BAD_REQUEST
+        );
+      }
+      throw createError("Failed to send delivery OTP via SMS", HTTP_STATUS.BAD_GATEWAY);
     }
-    throw createError("Failed to send delivery OTP via SMS", HTTP_STATUS.BAD_GATEWAY);
   }
 
   const publicBooking = toPublicBookingLean(booking);
@@ -194,7 +201,7 @@ export const acceptBookingRequest = async (
     throw createError("Insufficient remaining capacity for this parcel", HTTP_STATUS.BAD_REQUEST);
   }
 
-  const updated = await bookingRepository.updateStatus(bookingId, BOOKING_STATUS.PENDING_PAYMENT);
+  const updated = await bookingRepository.updateStatus(bookingId, BOOKING_STATUS.CONFIRMED);
   if (!updated) {
     throw createError("Failed to accept booking", HTTP_STATUS.INTERNAL_SERVER_ERROR);
   }
@@ -275,3 +282,9 @@ export const listMyBookings = async (
   const statuses = status === "live" ? LIVE_STATUSES : COMPLETED_STATUSES;
   return bookingRepository.findBySenderIdAndStatuses(senderId, statuses);
 };
+
+/** Trip rider: bookings on their trips with status `delivered` (newest first). */
+export const listRiderCompletedBookings = async (
+  riderUserId: string
+): Promise<bookingRepository.RiderActiveBookingLean[]> =>
+  bookingRepository.findDeliveredByTripRiderId(riderUserId);

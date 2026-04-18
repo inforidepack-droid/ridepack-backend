@@ -16,7 +16,7 @@ export const registerDeviceValidation = () => [
   body("deviceType").isIn(["android", "ios", "web"]).withMessage("deviceType required"),
 ];
 
-export const adminSendNotificationValidation = () => [
+export const sendNotificationValidation = () => [
   body("userId").notEmpty().isMongoId(),
   body("title").notEmpty().trim().isLength({ max: 200 }),
   body("message").notEmpty().trim().isLength({ max: 2000 }),
